@@ -26,7 +26,7 @@ def pending(connection: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
     return connection.execute(
         """SELECT a.* FROM alpha_artifacts a
            WHERE a.status='validated' AND NOT EXISTS(
-             SELECT 1 FROM simulation_runs r WHERE r.artifact_id=a.id AND r.platform_status IN ('PENDING','RUNNING','COMPLETE')
+             SELECT 1 FROM simulation_runs r WHERE r.artifact_id=a.id
            ) ORDER BY a.created_at LIMIT ?""", (limit,),
     ).fetchall()
 

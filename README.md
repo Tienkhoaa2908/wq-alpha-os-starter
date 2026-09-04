@@ -155,6 +155,8 @@ alpha-os status
 
 Đầu nối tuân theo `Retry-After` (thời gian máy chủ yêu cầu chờ), giới hạn song song mặc định là một và không tự nộp alpha. Tài khoản có xác minh bổ sung hoặc không có quyền dùng API (giao diện lập trình) sẽ dừng với hướng dẫn rõ ràng.
 
+Một alpha đã có hồ sơ mô phỏng (kể cả hồ sơ lỗi hoặc hết thời gian chờ) sẽ không tự gửi lại để tránh tạo bản trùng. Muốn thử lại, hãy tạo một biến thể mới có quan hệ với alpha cũ và để bộ chống trùng kiểm tra trước.
+
 ## 5. Xuất đường dẫn mở trình mô phỏng
 
 Cài một lần tệp người dùng [scripts/brain_prefill.user.js](scripts/brain_prefill.user.js) bằng Tampermonkey (tiện ích chạy đoạn mã người dùng). Sau đó:

@@ -4,6 +4,8 @@ import hashlib
 import json
 import sqlite3
 import uuid
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from ..config import Settings, simulation_settings
@@ -54,7 +56,15 @@ def _records(payload: Any) -> list[dict[str, Any]]:
         names = [name for name, _ in sorted(properties.items(), key=lambda item: int(item[1].get("index", 0)) if isinstance(item[1], dict) else 0)]
     else:
         names = []
-    return [dict(zip(names, row)) for row in payload["records"] if isinstance(row, list)]
+    rows: list[dict[str, Any]] = []
+    for item in payload["records"]:
+        # BRAIN currently wraps each row as {"value": [...], "Count": n},
+        # while older responses used the bare list.  Accept both forms so
+        # evidence and yearly stability checks remain reliable.
+        row = item.get("value") if isinstance(item, dict) else item
+        if isinstance(row, list):
+            rows.append(dict(zip(names, row)))
+    return rows
 
 
 def _maximum_self_correlation(payload: Any) -> float | None:
@@ -66,6 +76,27 @@ def _maximum_self_correlation(payload: Any) -> float | None:
         except (TypeError, ValueError):
             pass
     return max(values) if values else None
+
+
+def _prefer_records(current: Any, candidate: Any) -> Any:
+    return candidate if len(_records(candidate)) > len(_records(current)) else current
+
+
+def _historical_analytics(directory: Path) -> tuple[Any, Any, Any]:
+    yearly: Any = {}
+    pnl: Any = {}
+    correlations: Any = {}
+    for path in directory.glob("*.json"):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        yearly = _prefer_records(yearly, data.get("yearly") or {})
+        pnl = _prefer_records(pnl, data.get("pnl") or {})
+        correlations = _prefer_records(correlations, data.get("self_correlations") or {})
+    return yearly, pnl, correlations
 
 
 def run_one(connection: sqlite3.Connection, client: BrainClient, artifact: sqlite3.Row) -> dict[str, Any]:
@@ -144,7 +175,7 @@ def run_one(connection: sqlite3.Connection, client: BrainClient, artifact: sqlit
         connection.execute("UPDATE alpha_artifacts SET status=?,best_reward=max(coalesce(best_reward,-999),?) WHERE id=?",
                            (status, reward, artifact["id"]))
         connection.execute(
-            """INSERT INTO family_stats VALUES(?,?,?,?,?) ON CONFLICT(family) DO UPDATE SET
+            """INSERT INTO family_stats VALUES(?,?,?,?,?,?) ON CONFLICT(family) DO UPDATE SET
                completed_runs=completed_runs+1,total_reward=total_reward+excluded.total_reward,
                best_reward=max(coalesce(best_reward,-999),excluded.best_reward),last_artifact_id=excluded.last_artifact_id,
                updated_at=excluded.updated_at""",
@@ -164,3 +195,60 @@ def run_one(connection: sqlite3.Connection, client: BrainClient, artifact: sqlit
 def run_pending(connection: sqlite3.Connection, limit: int, client: BrainClient | None = None) -> list[dict[str, Any]]:
     client = client or BrainClient(Settings.from_env())
     return [run_one(connection, client, row) for row in pending(connection, limit)]
+
+
+def refresh_analytics(connection: sqlite3.Connection, limit: int = 20,
+                      client: BrainClient | None = None) -> list[dict[str, Any]]:
+    client = client or BrainClient(Settings.from_env())
+    rows = connection.execute(
+        """SELECT r.*,a.family,a.expression FROM simulation_runs r
+           JOIN alpha_artifacts a ON a.id=r.artifact_id
+           WHERE r.platform_status='COMPLETE' AND r.platform_alpha_id IS NOT NULL
+           ORDER BY r.finished_at DESC LIMIT ?""", (limit,),
+    ).fetchall()
+    refreshed: list[dict[str, Any]] = []
+    families: set[str] = set()
+    for row in rows:
+        alpha_id = row["platform_alpha_id"]
+        detail = client.get(f"/alphas/{alpha_id}").data
+        old_path = Path(row["response_path"])
+        old_path.parent.mkdir(parents=True, exist_ok=True)
+        yearly, pnl, correlations = _historical_analytics(old_path.parent)
+        yearly = _prefer_records(yearly, client.get(f"/alphas/{alpha_id}/recordsets/yearly-stats").data)
+        pnl = _prefer_records(pnl, client.get(f"/alphas/{alpha_id}/recordsets/pnl").data)
+        correlations = _prefer_records(correlations, client.get(f"/alphas/{alpha_id}/correlations/self").data)
+        try:
+            precheck = client.get(f"/alphas/{alpha_id}/check").data
+        except BrainError as exc:
+            precheck = {"error": str(exc)}
+        stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
+        refreshed_path = old_path.parent / f"analytics_refresh_{stamp}.json"
+        refreshed_path.write_text(json_dumps({"alpha": detail, "precheck": precheck, "yearly": yearly,
+                                               "pnl": pnl, "self_correlations": correlations}), encoding="utf-8")
+        metrics, checks, _ = _metrics(detail if isinstance(detail, dict) else {})
+        metrics["selfCorrelation"] = _maximum_self_correlation(correlations)
+        reward = score(metrics, checks)
+        connection.execute(
+            """UPDATE simulation_runs SET response_path=?,sharpe=?,fitness=?,turnover=?,returns_value=?,drawdown=?,
+               margin=?,subuniverse_sharpe=?,self_correlation=?,checks_json=?,annual_json=?,reward=?,error_text=NULL
+               WHERE id=?""",
+            (str(refreshed_path), metrics.get("sharpe"), metrics.get("fitness"), metrics.get("turnover"),
+             metrics.get("returns"), metrics.get("drawdown"), metrics.get("margin"), metrics.get("subuniverseSharpe"),
+             metrics.get("selfCorrelation"), json_dumps(checks), json_dumps(yearly), reward, row["id"]),
+        )
+        connection.execute("DELETE FROM reviews WHERE simulation_run_id=?", (row["id"],))
+        families.add(str(row["family"]))
+        refreshed.append({"run_id": row["id"], "alpha_id": alpha_id,
+                          "yearly_records": len(_records(yearly)),
+                          "self_correlation": metrics.get("selfCorrelation"), "reward": reward})
+    for family in families:
+        aggregate = connection.execute(
+            """SELECT count(*),coalesce(sum(r.reward),0),max(r.reward)
+               FROM simulation_runs r JOIN alpha_artifacts a ON a.id=r.artifact_id
+               WHERE a.family=? AND r.platform_status='COMPLETE'""", (family,),
+        ).fetchone()
+        connection.execute(
+            "UPDATE family_stats SET completed_runs=?,total_reward=?,best_reward=?,updated_at=? WHERE family=?",
+            (aggregate[0], aggregate[1], aggregate[2], utc_now(), family),
+        )
+    return refreshed

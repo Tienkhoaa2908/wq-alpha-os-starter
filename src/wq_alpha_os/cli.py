@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 from .brain.client import BrainClient
-from .brain.simulation import plan, run_pending
-from .catalog import import_legacy, sync_from_brain
+from .brain.simulation import plan, refresh_analytics, run_pending
+from .catalog import import_brain_snapshot, import_legacy, sync_from_brain
 from .config import PROJECT_ROOT, Settings
 from .db import initialize, json_dumps, session
 from .dsl.validator import validate_expression
@@ -39,6 +40,8 @@ def cmd_catalog(args: argparse.Namespace) -> None:
     initialize()
     if args.catalog_command == "import-legacy":
         result = import_legacy(Path(args.source).resolve())
+    elif args.catalog_command == "import-snapshot":
+        result = import_brain_snapshot(Path(args.source).resolve(), None, args.region, args.universe, args.delay)
     else:
         client = BrainClient()
         result = sync_from_brain(client, None, args.region, args.universe, args.delay)
@@ -112,6 +115,12 @@ def cmd_review(args: argparse.Namespace) -> None:
         _print(review_pending(connection, args.limit))
 
 
+def cmd_refresh(args: argparse.Namespace) -> None:
+    initialize()
+    with session() as connection:
+        _print(refresh_analytics(connection, args.limit))
+
+
 def cmd_export(args: argparse.Namespace) -> None:
     initialize()
     output = Path(args.output).resolve()
@@ -150,6 +159,12 @@ def parser() -> argparse.ArgumentParser:
     legacy = child.add_parser("import-legacy", help="Nhập cơ sở dữ liệu cũ")
     legacy.add_argument("--source", default="data/db/legacy_wq_alpha_os.sqlite")
     legacy.set_defaults(func=cmd_catalog)
+    snapshot = child.add_parser("import-snapshot", help="Nhập bản chụp BRAIN đã tải")
+    snapshot.add_argument("--source", required=True)
+    snapshot.add_argument("--region", default="USA")
+    snapshot.add_argument("--universe", default="TOP3000")
+    snapshot.add_argument("--delay", type=int, default=1)
+    snapshot.set_defaults(func=cmd_catalog)
     sync = child.add_parser("sync", help="Đồng bộ từ tài khoản BRAIN")
     sync.add_argument("--region", default="USA")
     sync.add_argument("--universe", default="TOP3000")
@@ -184,6 +199,9 @@ def parser() -> argparse.ArgumentParser:
     item = sub.add_parser("review", help="Đánh giá độc lập kết quả đã có")
     item.add_argument("--limit", type=int, default=20)
     item.set_defaults(func=cmd_review)
+    item = sub.add_parser("refresh", help="Lấy lại thống kê theo năm và tương quan")
+    item.add_argument("--limit", type=int, default=20)
+    item.set_defaults(func=cmd_refresh)
     item = sub.add_parser("export", help="Xuất CSV có đường dẫn điền sẵn")
     item.add_argument("--output", default="data/exports/alpha_candidates.csv")
     item.add_argument("--status", default="promoted")
@@ -199,5 +217,9 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     args = parser().parse_args()
     args.func(args)

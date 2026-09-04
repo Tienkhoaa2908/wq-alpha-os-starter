@@ -21,6 +21,7 @@
     "promotion_min_sharpe": 1.25,
     "promotion_min_fitness": 1.0,
     "promotion_max_self_correlation": 0.7,
-    "promotion_requires_all_checks": true
+    "promotion_requires_all_checks": true,
+    "minimum_annual_years": 3
   }
 }

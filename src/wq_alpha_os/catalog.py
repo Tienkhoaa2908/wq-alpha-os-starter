@@ -161,26 +161,49 @@ def _items(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
-def sync_from_brain(client: Any, target: Path | None, region: str, universe: str, delay: int) -> dict[str, int]:
-    raw_dir = client.new_evidence_directory("catalog")
-    filters = {"instrumentType": "EQUITY", "region": region, "universe": universe, "delay": delay}
-    datasets_payload = client.get_all("/data-sets", filters)
-    fields_payload = client.get_all("/data-fields", filters)
-    operators_payload = client.get_all("/operators", {})
-    (raw_dir / "datasets.json").write_text(json_dumps(datasets_payload), encoding="utf-8")
-    (raw_dir / "fields.json").write_text(json_dumps(fields_payload), encoding="utf-8")
-    (raw_dir / "operators.json").write_text(json_dumps(operators_payload), encoding="utf-8")
+def _text_value(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        selected = value.get("id") or value.get("name") or value.get("description")
+        return str(selected) if selected is not None else json_dumps(value)
+    return str(value)
+
+
+def _percent(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number * 100 if 0 <= number <= 1 else number
+
+
+def import_brain_snapshot(raw_dir: Path, target: Path | None, region: str,
+                          universe: str, delay: int) -> dict[str, int]:
+    required = {name: raw_dir / f"{name}.json" for name in ("datasets", "fields", "operators")}
+    missing = [str(path) for path in required.values() if not path.is_file()]
+    if missing:
+        raise FileNotFoundError("Thiếu tệp bản chụp: " + ", ".join(missing))
+    datasets_payload = json.loads(required["datasets"].read_text(encoding="utf-8"))
+    fields_payload = json.loads(required["fields"].read_text(encoding="utf-8"))
+    operators_payload = json.loads(required["operators"].read_text(encoding="utf-8"))
     counts = {"datasets": 0, "fields": 0, "operators": 0}
     with session(target) as connection:
+        legacy_snapshots = "SELECT id FROM catalog_snapshots WHERE source LIKE 'legacy:%'"
+        connection.execute(f"DELETE FROM fields WHERE snapshot_id IN ({legacy_snapshots})")
+        connection.execute(f"DELETE FROM datasets WHERE snapshot_id IN ({legacy_snapshots})")
+        connection.execute(f"DELETE FROM operators WHERE snapshot_id IN ({legacy_snapshots})")
         snapshot_id = _snapshot(connection, "brain_api", region, universe, delay, str(raw_dir))
         for data in _items(datasets_payload):
             dataset_id = str(data.get("id") or data.get("datasetId") or "")
             name = str(data.get("name") or dataset_id)
             connection.execute(
                 """INSERT OR REPLACE INTO datasets VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (_hash(dataset_id or name, region, universe, delay), dataset_id, name, data.get("category"), region,
-                 universe, delay, data.get("fieldCount") or data.get("field_count"), data.get("coverage"),
-                 data.get("dateCoverage"), data.get("valueScore"), data.get("alphaCount"), json_dumps(data),
+                (_hash(dataset_id or name, region, universe, delay), dataset_id, name, _text_value(data.get("category")), region,
+                 universe, delay, data.get("fieldCount") or data.get("field_count"), _percent(data.get("coverage")),
+                 _percent(data.get("dateCoverage")), data.get("valueScore"), data.get("alphaCount"), json_dumps(data),
                  snapshot_id, utc_now()),
             )
             counts["datasets"] += 1
@@ -194,9 +217,9 @@ def sync_from_brain(client: Any, target: Path | None, region: str, universe: str
             theme, direction = classify_field(name, str(data.get("description") or ""))
             connection.execute(
                 """INSERT OR REPLACE INTO fields VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (_hash(name, dataset_id, region, universe, delay), name, name, dataset_id, dataset_name,
-                 data.get("category"), data.get("description"), str(data.get("type") or "MATRIX").upper(), region,
-                 universe, delay, data.get("coverage"), data.get("dateCoverage"), data.get("alphaCount"), theme,
+                (_hash(name, dataset_id, region, universe, delay), name, name, _text_value(dataset_id), _text_value(dataset_name),
+                 _text_value(data.get("category")), data.get("description"), str(data.get("type") or "MATRIX").upper(), region,
+                 universe, delay, _percent(data.get("coverage")), _percent(data.get("dateCoverage")), data.get("alphaCount"), theme,
                  direction, json_dumps(data), snapshot_id, utc_now()),
             )
             counts["fields"] += 1
@@ -211,3 +234,15 @@ def sync_from_brain(client: Any, target: Path | None, region: str, universe: str
                 )
                 counts["operators"] += 1
     return counts
+
+
+def sync_from_brain(client: Any, target: Path | None, region: str, universe: str, delay: int) -> dict[str, int]:
+    raw_dir = client.new_evidence_directory("catalog")
+    filters = {"instrumentType": "EQUITY", "region": region, "universe": universe, "delay": delay}
+    datasets_payload = client.get_all("/data-sets", filters, progress_label="Bo du lieu")
+    fields_payload = client.get_all("/data-fields", filters, progress_label="Truong du lieu")
+    operators_payload = client.get_all("/operators", {}, progress_label="Toan tu")
+    (raw_dir / "datasets.json").write_text(json_dumps(datasets_payload), encoding="utf-8")
+    (raw_dir / "fields.json").write_text(json_dumps(fields_payload), encoding="utf-8")
+    (raw_dir / "operators.json").write_text(json_dumps(operators_payload), encoding="utf-8")
+    return import_brain_snapshot(raw_dir, target, region, universe, delay)

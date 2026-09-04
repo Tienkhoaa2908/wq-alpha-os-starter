@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from wq_alpha_os.brain.simulation import payload_for, settings_hash
+from wq_alpha_os.brain.simulation import _records, payload_for, settings_hash
 from wq_alpha_os.catalog import classify_field
 from wq_alpha_os.db import DDL
 from wq_alpha_os.research.proposer import parse_response
@@ -41,6 +41,13 @@ class WorkflowTests(unittest.TestCase):
         payload = payload_for("rank(close)", {"region": "USA"})
         self.assertEqual(payload["type"], "REGULAR")
         self.assertEqual(payload["regular"], "rank(close)")
+
+    def test_brain_wrapped_records_are_decoded(self):
+        payload = {
+            "schema": {"properties": [{"name": "year"}, {"name": "sharpe"}]},
+            "records": [{"value": ["2024", 1.2], "Count": 2}],
+        }
+        self.assertEqual(_records(payload), [{"year": "2024", "sharpe": 1.2}])
 
     def test_specific_semantics_precede_generic_model_label(self):
         self.assertEqual(classify_field("mdl_value_cashflow_factor", "model score")[0], "value_cashflow")

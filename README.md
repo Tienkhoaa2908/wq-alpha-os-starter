@@ -2,6 +2,12 @@
 
 Hệ thống nghiên cứu alpha (tín hiệu dự báo) chạy bằng dòng lệnh cho WorldQuant BRAIN. Mục tiêu của dự án là tạo một vòng nghiên cứu có bằng chứng:
 
+## Nguyên tắc làm việc tiết kiệm dung lượng
+
+Ưu tiên cho máy tự làm những việc có thể tự động hóa: chạy lệnh, ghi kết quả vào cơ sở dữ liệu, lưu bằng chứng và tạo báo cáo ngắn. Không gửi toàn bộ nhật ký, danh sách alpha hoặc dữ liệu PnL (lãi và lỗ theo thời gian) vào cuộc trao đổi; chỉ gửi tổng hợp, lỗi cùng đường dẫn tệp khi cần.
+
+Tài liệu và các tệp trong `data/evidence/` là nguồn sự thật của hệ thống. Khi cần tiếp tục, chỉ nêu việc mới hoặc quyết định mới; không cần dịch lại ngữ cảnh đã có trong tài liệu.
+
 1. đồng bộ trường dữ liệu và toán tử từ BRAIN;
 2. tạo giả thuyết và biểu thức có kiểu;
 3. chặn biểu thức sai hoặc trùng trước khi mô phỏng;
@@ -94,6 +100,38 @@ BRAIN_PASSWORD=mat_khau_cua_ban
 
 Không gửi `.env`, mật khẩu, mã phiên hoặc dữ liệu PnL (lãi và lỗ theo thời gian) cho mô hình.
 
+Phải điền tài khoản vào `.env`, không điền vào `.env.example`. Không cần kích hoạt môi trường nếu gọi đúng tệp thực thi. Từ bất kỳ thư mục nào, cách ít nhầm nhất là:
+
+```powershell
+Set-Location 'C:\Users\welcome\OneDrive\Desktop\C++\wq-alpha-os-starter'
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\run_research.ps1 -Limit 8
+```
+
+Muốn gọi mô hình Qwen/Ollama (mô hình chạy tại máy) để tạo thêm đề xuất trước khi mô phỏng, thêm `-Generate`:
+
+```powershell
+.\scripts\run_research.ps1 -Limit 8 -Generate
+```
+
+Nếu chỉ muốn xem hàng đợi mà không gọi mô hình hay máy chủ mô phỏng, dùng `-DryRun`.
+
+Nếu máy đã cho phép chạy tệp PowerShell (tập lệnh PowerShell), có thể bỏ qua dòng `Set-ExecutionPolicy`. Hoặc gọi trực tiếp bằng `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_research.ps1 -Limit 8`.
+
+Muốn kiểm tra mọi thứ mà không gửi mô phỏng lên máy chủ, dùng cờ `-DryRun` (chỉ kiểm tra):
+
+```powershell
+.\scripts\run_research.ps1 -Limit 8 -DryRun
+```
+
+Cờ này chỉ kiểm tra hàng đợi rồi xem trạng thái; nó không chạy mô phỏng thật, không tải kết quả và không xuất tệp mới.
+
+Lần đầu cần đồng bộ lại danh mục thì thêm `-SyncCatalog`. Các lần sau không thêm cờ này để tránh tải lại hàng nghìn trường:
+
+```powershell
+.\scripts\run_research.ps1 -Limit 8 -SyncCatalog
+```
+
 Đồng bộ danh mục mà tài khoản được phép truy cập:
 
 ```powershell
@@ -110,6 +148,7 @@ Gửi thật và thu kết quả:
 
 ```powershell
 alpha-os simulate --limit 5
+alpha-os refresh --limit 5
 alpha-os review --limit 20
 alpha-os status
 ```

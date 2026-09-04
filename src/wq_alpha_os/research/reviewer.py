@@ -8,7 +8,7 @@ from typing import Any
 
 from ..config import load_defaults
 from ..db import json_dumps, utc_now
-from ..brain.simulation import settings_hash
+from ..brain.simulation import _records, settings_hash
 from .scorer import check_summary, promotable
 
 
@@ -37,6 +37,57 @@ def _verify_evidence(row: sqlite3.Row) -> list[str]:
     return errors
 
 
+def _annual_stability(payload: Any, minimum_years: int = 3) -> tuple[dict[str, Any], list[str]]:
+    """Summarize yearly evidence and flag fragile performance.
+
+    WorldQuant currently returns rows as ``{"value": [...]}``; the shared
+    record decoder also accepts the older bare-list format.  A single weak
+    year is tolerated, but missing history, repeated losses, or a negative
+    annual Sharpe keep an alpha on hold.
+    """
+    rows = _records(payload)
+    if not rows:
+        return {}, ["Chưa đọc được dữ liệu kết quả theo năm."]
+    # Legacy fixtures may only contain opaque rows without a schema.  Keep
+    # those usable for evidence checks; stability is evaluated once BRAIN
+    # supplies named columns.
+    if not any(key in rows[0] for key in ("year", "pnl", "sharpe")):
+        return {}, []
+    is_rows = [row for row in rows if str(row.get("stage") or "IS").upper() == "IS"]
+    if not is_rows:
+        is_rows = rows
+    warnings: list[str] = []
+    if len(is_rows) < minimum_years:
+        warnings.append(f"Chỉ có {len(is_rows)} năm dữ liệu; cần ít nhất {minimum_years} năm.")
+    pnl_values = []
+    sharpe_values = []
+    for row in is_rows:
+        try:
+            if row.get("pnl") is not None:
+                pnl_values.append(float(row["pnl"]))
+        except (TypeError, ValueError):
+            pass
+        try:
+            if row.get("sharpe") is not None:
+                sharpe_values.append(float(row["sharpe"]))
+        except (TypeError, ValueError):
+            pass
+    negative_pnl_years = sum(value < 0 for value in pnl_values)
+    negative_sharpe_years = sum(value < 0 for value in sharpe_values)
+    if negative_pnl_years > 0:
+        warnings.append(f"Có {negative_pnl_years} năm âm PnL (lãi/lỗ tích lũy).")
+    if negative_sharpe_years > 0:
+        warnings.append(f"Có {negative_sharpe_years} năm âm chỉ số Sharpe (hiệu quả đã điều chỉnh rủi ro).")
+    summary = {
+        "years": len(is_rows),
+        "negative_pnl_years": negative_pnl_years,
+        "negative_sharpe_years": negative_sharpe_years,
+        "min_sharpe": min(sharpe_values) if sharpe_values else None,
+        "mean_sharpe": round(sum(sharpe_values) / len(sharpe_values), 4) if sharpe_values else None,
+    }
+    return summary, warnings
+
+
 def review_pending(connection: sqlite3.Connection, limit: int = 20) -> list[dict[str, Any]]:
     rows = connection.execute(
         """SELECT a.id artifact_id,a.family,a.expression,r.* FROM alpha_artifacts a
@@ -59,14 +110,22 @@ def review_pending(connection: sqlite3.Connection, limit: int = 20) -> list[dict
             warnings.append("Chưa có danh sách kiểm tra của BRAIN.")
         if row["self_correlation"] is None:
             warnings.append("Chưa có bằng chứng về tương quan tự thân.")
-        if not json.loads(row["annual_json"] or "[]"):
+        annual_payload = json.loads(row["annual_json"] or "[]")
+        if not annual_payload:
             warnings.append("Chưa có chuỗi kết quả theo năm để đánh giá độ ổn định.")
+            annual_summary = {}
+        else:
+            annual_summary, annual_warnings = _annual_stability(
+                annual_payload, int(limits.get("minimum_annual_years", 3))
+            )
+            warnings.extend(annual_warnings)
         if failed:
             warnings.append("Kiểm tra thất bại: " + ", ".join(failures))
         evidence_valid = not evidence_errors
         verdict = "promote" if promotable(metrics, checks, limits) and not warnings else "hold"
         report = {"verdict": verdict, "metrics": metrics, "failed_checks": failures,
-                  "warnings": warnings, "evidence_path": row["response_path"]}
+                  "annual_stability": annual_summary, "warnings": warnings,
+                  "evidence_path": row["response_path"]}
         connection.execute(
             "INSERT INTO reviews VALUES(?,?,?,?,?,?,?,?,?)",
             (str(uuid.uuid4()), row["artifact_id"], row["id"], "deterministic_reviewer_v1", verdict,

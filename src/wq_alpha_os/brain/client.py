@@ -7,6 +7,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -52,7 +53,8 @@ class BrainClient:
 
     def _request(self, method: str, path: str, *, payload: Any = None,
                  params: dict[str, Any] | None = None, headers: dict[str, str] | None = None,
-                 retry_auth: bool = True) -> Response:
+                 retry_auth: bool = True, transient_retries: int = 8,
+                 transient_attempt: int = 0) -> Response:
         if path.startswith("http://") or path.startswith("https://"):
             url = path
         else:
@@ -79,7 +81,16 @@ class BrainClient:
                 data = {"raw": text[:4000]}
             if exc.code == 401 and retry_auth:
                 self.authenticate()
-                return self._request(method, path, payload=payload, params=params, headers=headers, retry_auth=False)
+                return self._request(method, path, payload=payload, params=params, headers=headers,
+                                     retry_auth=False, transient_retries=transient_retries,
+                                     transient_attempt=transient_attempt)
+            if exc.code in {429, 502, 503, 504} and transient_retries > 0:
+                server_wait = self.wait_seconds(dict(exc.headers.items()), 0)
+                wait = max(server_wait, min(60.0, 5.0 * (2 ** transient_attempt)))
+                time.sleep(wait)
+                return self._request(method, path, payload=payload, params=params, headers=headers,
+                                     retry_auth=retry_auth, transient_retries=transient_retries - 1,
+                                     transient_attempt=transient_attempt + 1)
             raise BrainError(f"BRAIN trả mã {exc.code} cho {method} {urllib.parse.urlsplit(url).path}: {data}") from exc
         except urllib.error.URLError as exc:
             raise BrainError(f"Không kết nối được BRAIN: {exc.reason}") from exc
@@ -94,35 +105,71 @@ class BrainClient:
             self.authenticate()
         return self._request("POST", path, payload=payload)
 
-    def get_all(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+    def get_all(self, path: str, params: dict[str, Any] | None = None,
+                *, progress_label: str | None = None, workers: int = 1) -> dict[str, Any]:
         query = dict(params or {})
         query.setdefault("limit", 50)
         query.setdefault("offset", 0)
-        results: list[Any] = []
-        pages: list[dict[str, Any]] = []
+        first_data = self.get(path, query).data
+        if isinstance(first_data, list):
+            first_page = first_data
+            total = None
+        elif isinstance(first_data, dict):
+            first_page = first_data.get("results") or first_data.get("data") or []
+            total = first_data.get("count")
+        else:
+            return {"results": [], "pages": 0, "count": 0}
+        if not isinstance(first_page, list):
+            return {"results": [], "pages": 1, "count": 0}
+        limit = int(query["limit"])
+        start_offset = int(query["offset"])
+        if total is not None:
+            total = int(total)
+            offsets = list(range(start_offset + len(first_page), total, limit))
+            if len(offsets) > 1000:
+                raise BrainError(f"Danh mục có quá nhiều trang bất thường: {len(offsets) + 1}")
+            page_map: dict[int, list[Any]] = {start_offset: first_page}
+            completed = len(first_page)
+            if progress_label:
+                print(f"{progress_label}: {completed}/{total}", flush=True)
+            with ThreadPoolExecutor(max_workers=max(1, min(workers, 4))) as pool:
+                futures = {}
+                for offset in offsets:
+                    page_query = {**query, "offset": offset}
+                    futures[pool.submit(self.get, path, page_query)] = offset
+                for future in as_completed(futures):
+                    offset = futures[future]
+                    data = future.result().data
+                    items = data if isinstance(data, list) else data.get("results") or data.get("data") or []
+                    if not isinstance(items, list):
+                        raise BrainError(f"Trang danh mục tại offset {offset} không phải danh sách")
+                    page_map[offset] = items
+                    completed += len(items)
+                    if progress_label and (completed == total or completed // 500 != (completed - len(items)) // 500):
+                        print(f"{progress_label}: {completed}/{total}", flush=True)
+            results = [item for offset in sorted(page_map) for item in page_map[offset]]
+            return {"results": results, "pages": len(page_map), "count": len(results)}
+
+        results: list[Any] = list(first_page)
+        pages = 1
         while True:
+            if not results or len(results) % limit:
+                break
+            query["offset"] = start_offset + len(results)
             data = self.get(path, query).data
             if isinstance(data, list):
                 page_items = data
-                page = {"results": data}
             elif isinstance(data, dict):
-                page = data
                 page_items = data.get("results") or data.get("data") or []
             else:
                 break
-            pages.append(page)
-            if not isinstance(page_items, list):
+            if not isinstance(page_items, list) or not page_items:
                 break
             results.extend(page_items)
-            count = page.get("count") if isinstance(page, dict) else None
-            if not page_items:
-                break
-            query["offset"] = int(query["offset"]) + len(page_items)
-            if count is not None and len(results) >= int(count):
-                break
-            if count is None and len(page_items) < int(query["limit"]):
-                break
-        return {"results": results, "pages": len(pages), "count": len(results)}
+            pages += 1
+            if pages > 1000:
+                raise BrainError("Danh mục vượt giới hạn 1.000 trang")
+        return {"results": results, "pages": pages, "count": len(results)}
 
     @staticmethod
     def wait_seconds(headers: dict[str, str], default: int) -> float:

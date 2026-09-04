@@ -1,0 +1,119 @@
+(async () => {
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  function clean(x) {
+    return (x || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  function getText() {
+    return clean(document.body.innerText);
+  }
+
+  function findClickableByText(label) {
+    const wanted = label.toLowerCase();
+
+    const candidates = [...document.querySelectorAll("button, a, div, span")]
+      .filter(el => clean(el.innerText).toLowerCase() === wanted);
+
+    for (const el of candidates) {
+      const target = el.closest("button") || el.closest("a") || el;
+
+      const rect = target.getBoundingClientRect();
+      const visible = rect.width > 0 && rect.height > 0;
+
+      const disabled =
+        target.disabled === true ||
+        target.getAttribute("disabled") !== null ||
+        target.getAttribute("aria-disabled") === "true" ||
+        target.className.toString().toLowerCase().includes("disabled") ||
+        getComputedStyle(target).pointerEvents === "none";
+
+      if (visible && !disabled) return target;
+    }
+
+    return null;
+  }
+
+  const pages = [];
+  const seenPageTexts = new Set();
+
+  for (let pageNo = 1; pageNo <= 100; pageNo++) {
+    await sleep(1000);
+
+    const pageText = getText();
+    const key = pageText.slice(0, 5000);
+
+    if (seenPageTexts.has(key)) {
+      console.log("Repeated page detected. Stop.");
+      break;
+    }
+
+    seenPageTexts.add(key);
+
+    pages.push({
+      page_no: pageNo,
+      url: location.href,
+      captured_at: new Date().toISOString(),
+      text: pageText
+    });
+
+    console.log(`Captured page ${pageNo}. Text length = ${pageText.length}`);
+
+    const next = findClickableByText("Next");
+
+    if (!next) {
+      console.log("No active Next button. Finished.");
+      break;
+    }
+
+    next.scrollIntoView({ block: "center" });
+    await sleep(300);
+
+    const before = getText();
+    next.click();
+    await sleep(1500);
+
+    const after = getText();
+
+    if (after === before) {
+      console.log("Next click did not change page. Finished.");
+      break;
+    }
+  }
+
+  const payload = {
+    exported_at: new Date().toISOString(),
+    export_type: "wq_paginated_raw_text",
+    url: location.href,
+    title: document.title,
+    total_pages_captured: pages.length,
+    pages
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+
+  const safeName = location.pathname
+    .replaceAll("/", "_")
+    .replace(/[^a-zA-Z0-9_ -]/g, "")
+    .replace(/^_+/, "") || "wq_paginated_raw_text";
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `wq_paginated_raw_${safeName}_${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
+
+  console.log("Export complete.");
+  console.log("Total pages captured:", pages.length);
+})();

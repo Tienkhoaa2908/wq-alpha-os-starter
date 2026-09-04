@@ -1,0 +1,36 @@
+# Secrets
+.env
+.env.*
+!.env.example
+credentials.json
+credential.txt
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime evidence and private WorldQuant exports
+data/db/*.sqlite*
+data/raw/
+data/evidence/
+data/outbox/
+data/exports/
+data/debug/
+exports_raw/
+
+# Editors and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Build
+build/
+dist/
+*.log

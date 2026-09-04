@@ -1,0 +1,1 @@
+"""Đầu nối WorldQuant BRAIN."""

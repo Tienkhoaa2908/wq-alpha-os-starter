@@ -1,0 +1,26 @@
+{
+  "simulation": {
+    "instrumentType": "EQUITY",
+    "region": "USA",
+    "universe": "TOP3000",
+    "delay": 1,
+    "decay": 6,
+    "neutralization": "INDUSTRY",
+    "truncation": 0.01,
+    "pasteurization": "ON",
+    "unitHandling": "VERIFY",
+    "nanHandling": "OFF",
+    "language": "FASTEXPR",
+    "visualization": false
+  },
+  "research": {
+    "max_expression_depth": 20,
+    "max_expression_nodes": 80,
+    "min_field_coverage": 70,
+    "near_duplicate_threshold": 0.9,
+    "promotion_min_sharpe": 1.25,
+    "promotion_min_fitness": 1.0,
+    "promotion_max_self_correlation": 0.7,
+    "promotion_requires_all_checks": true
+  }
+}

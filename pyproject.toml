@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wq-alpha-os"
+version = "0.2.0"
+description = "Evidence-driven WorldQuant BRAIN alpha research workflow"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Proprietary - personal research use"}
+authors = [{name = "wq-alpha-os"}]
+dependencies = []
+
+[project.scripts]
+alpha-os = "wq_alpha_os.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

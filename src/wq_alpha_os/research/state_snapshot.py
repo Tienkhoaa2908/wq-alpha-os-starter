@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-"""Sanitized, source-controlled snapshot of the local research state.
-
-The SQLite database and raw evidence remain local. This module exports only the
-small coordination state that another agent can safely read from GitHub.
-"""
+"""Sanitized, source-controlled snapshot of the local research state."""
 
 from datetime import UTC, datetime
 import json
@@ -15,10 +11,8 @@ from typing import Any
 
 from ..config import PROJECT_ROOT, simulation_settings
 from ..operator_registry import active_brain_operator_count
+from .motifs import LEGACY_EXCLUDED_STATUS, RESEARCH_EXCLUDED_STATUSES, SCREENED_OUT_STATUS
 from .recordsets import annual_sharpes
-
-
-LEGACY_STATUS = "legacy_unverified"
 
 
 def _git_value(*args: str) -> str | None:
@@ -92,9 +86,13 @@ def build_state(connection: sqlite3.Connection) -> dict[str, Any]:
 
     total_artifacts = int(connection.execute("SELECT count(*) FROM alpha_artifacts").fetchone()[0])
     legacy_artifacts = int(connection.execute(
-        "SELECT count(*) FROM alpha_artifacts WHERE status=?", (LEGACY_STATUS,)
+        "SELECT count(*) FROM alpha_artifacts WHERE status=?", (LEGACY_EXCLUDED_STATUS,)
     ).fetchone()[0])
-    eligible_artifacts = total_artifacts - legacy_artifacts
+    screened_artifacts = int(connection.execute(
+        "SELECT count(*) FROM alpha_artifacts WHERE status=?", (SCREENED_OUT_STATUS,)
+    ).fetchone()[0])
+    excluded_artifacts = legacy_artifacts + screened_artifacts
+    eligible_artifacts = total_artifacts - excluded_artifacts
     settings = simulation_settings()
     return {
         "snapshot": {
@@ -119,10 +117,12 @@ def build_state(connection: sqlite3.Connection) -> dict[str, Any]:
             "artifacts_total": total_artifacts,
             "artifacts_research_eligible": eligible_artifacts,
             "legacy_unverified_quarantined": legacy_artifacts,
+            "screened_out_quarantined": screened_artifacts,
+            "research_excluded_statuses": list(RESEARCH_EXCLUDED_STATUSES),
             "artifact_statuses": artifact_statuses,
             "motifs_active": int(connection.execute("SELECT count(*) FROM artifact_motifs").fetchone()[0]),
             "motif_contexts": int(connection.execute("SELECT count(*) FROM motif_stats").fetchone()[0]),
-            "legacy_policy": "retain for provenance; exclude from v2 novelty, subtree and empirical memory",
+            "exclusion_policy": "retain provenance; exclude legacy_unverified and screened_out from novelty, duplicate, subtree and empirical research memory",
         },
         "simulations": {
             "total": int(connection.execute("SELECT count(*) FROM simulation_runs").fetchone()[0]),
@@ -135,8 +135,10 @@ def build_state(connection: sqlite3.Connection) -> dict[str, Any]:
                 "00_TONG_QUAN_DU_AN.md",
                 "docs/TRANG_THAI_HIEN_TAI.md",
                 "docs/generated/research_state.json",
+                "docs/generated/autonomous_v2_run_status.json",
+                "docs/generated/autonomous_v2_dry_run.json",
             ],
-            "next_gate": "review calibrated v3 field and packet audits before Gemini or new BRAIN simulations",
+            "next_gate": "review the autonomous no-LLM breadth batch; simulate only after semantic/template diversity passes",
         },
     }
 
@@ -168,10 +170,11 @@ def _markdown(state: dict[str, Any]) -> str:
         f"- Alpha artifact vật lý: **{research['artifacts_total']}**",
         f"- Artifact đủ điều kiện tham gia nghiên cứu v2: **{research['artifacts_research_eligible']}**",
         f"- Legacy Gemini bị cách ly: **{research['legacy_unverified_quarantined']}**",
+        f"- Dry-run bị sàng ra: **{research['screened_out_quarantined']}**",
         f"- Motif đang hoạt động: **{research['motifs_active']}**; empirical context: **{research['motif_contexts']}**",
         f"- Hypothesis card: **{research['hypothesis_cards']}**; AlphaPlan: **{research['alpha_plans']}**",
         "",
-        "Legacy policy: giữ lại record cũ để truy vết, nhưng không cho chúng ảnh hưởng novelty, subtree frequency hay empirical memory của v2.",
+        "Các artifact `legacy_unverified` và `screened_out` được giữ để truy vết nhưng không tham gia novelty, duplicate gate, subtree frequency hay empirical memory.",
         "",
         "## Mô phỏng",
         "",
@@ -196,7 +199,7 @@ def _markdown(state: dict[str, Any]) -> str:
         "",
         "## Cổng tiếp theo",
         "",
-        "Đọc hai audit hiệu chuẩn v3; chỉ đi tiếp khi packet gate đạt và mẫu rủi ro phân loại field đã được chấp nhận.",
+        "Đọc `autonomous_v2_dry_run.json`; chỉ mô phỏng khi batch đủ đa dạng theme/dataset/template và không có mâu thuẫn semantic rõ ràng.",
         "",
         "Nguồn chi tiết máy đọc được: `docs/generated/research_state.json`.",
         "",
@@ -221,6 +224,7 @@ def write_snapshot(
         "json": str(json_path),
         "markdown": str(markdown_path),
         "legacy_quarantined": state["research"]["legacy_unverified_quarantined"],
+        "screened_out_quarantined": state["research"]["screened_out_quarantined"],
         "research_eligible_artifacts": state["research"]["artifacts_research_eligible"],
     }
 

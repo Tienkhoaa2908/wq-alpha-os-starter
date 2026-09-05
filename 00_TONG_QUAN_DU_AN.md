@@ -1,113 +1,216 @@
-# Tong quan du an WQ Alpha OS
+# Tổng quan dự án WQ Alpha OS
 
-File nay la diem doc dau tien cho cac phien lam viec sau. Muc tieu la tiet kiem dung luong hoi thoai: doc file nay truoc, chi mo them file khac khi can sua dung phan do.
+Đây là điểm đọc đầu tiên cho mọi phiên làm việc. Mục tiêu là giúp ChatGPT/Codex hiểu đúng dự án mà không phải audit toàn repo.
 
-## Snapshot trang thai
+## Mục tiêu
 
-- Ban snapshot may-doc duoc nam tai `docs/TRANG_THAI_HIEN_TAI.md`.
-- Snapshot hien tai: 16 dataset, 7642 truong, 66 toan tu BRAIN active duy nhat, 14 ung vien, 14 lan mo phong (13 hoan tat, 1 loi), 0 promoted. Bang lich su con 127 dong vi co 61 dong typed registry cu; khong dung con so vat ly nay lam active count.
-- Alpha tot nhat hien tai co Sharpe 1.43, Fitness 0.98, turnover 0.028 va self-correlation 0.9415; chua dat nguong de promoted.
-- Moi tac nhan phai doc snapshot sau file nay truoc khi xem SQLite hoac bat dau viec moi.
+Xây một hệ thống nghiên cứu alpha có bằng chứng, trong đó LLM chỉ làm phần giả thuyết và lựa chọn ý định nghiên cứu; code cục bộ chịu trách nhiệm biên dịch biểu thức, kiểm tra kiểu/ngữ nghĩa, chống clone, mô phỏng, lưu bằng chứng và học từ kết quả.
 
-## Quy tac lam viec ngan gon
+Không dùng mô hình cục bộ để sinh alpha. Không để LLM viết FASTEXPR trực tiếp trong luồng v2.
 
-- Khong dan nhat ky dai, danh sach alpha lon, ket qua lai lo, hoac toan bo co so du lieu vao hoi thoai.
-- Khong in tai khoan, mat khau, khoa truy cap, ma phien. File `.env` chi nam cuc bo va khong dua vao Git.
-- Uu tien viet ma de may tu chay: sinh y tuong, kiem tra cu phap, chong trung, mo phong, lay ket qua, cham diem, xuat tep.
-- Khong tu dong nop alpha len WorldQuant BRAIN. He thong chi tao alpha, mo phong, luu bang chung va xuat duong dan.
-- Sau khi sua ma, chay kiem thu toi thieu: `python -m unittest discover -s tests -v`.
+## Nguồn sự thật
 
-## Cach mo dung du an
+- `data/db/alpha_lab.sqlite`: trạng thái thực nghiệm cục bộ.
+- `data/evidence/`: bằng chứng mô phỏng và phản hồi model cục bộ.
+- `docs/TRANG_THAI_HIEN_TAI.md`: snapshot ngắn cho người đọc.
+- `docs/generated/research_state.json`: snapshot máy đọc được để ChatGPT/Codex đọc trực tiếp trên GitHub.
+- `AGENTS.md`: quy tắc vận hành bắt buộc.
 
-Thu muc du an nen dung rieng, khong de chung trong thu muc co nhieu bai C++/Python khac. Vi du tot:
+Sau mỗi thay đổi có ý nghĩa phải chạy `scripts/finalize_task.ps1` để test, rebuild knowledge, cập nhật snapshot, commit và push GitHub.
 
-```powershell
-C:\Users\welcome\OneDrive\Desktop\wq-alpha-os-starter
+## Trạng thái nền hiện biết
+
+- 16 dataset.
+- 7.642 field.
+- 66 BRAIN operator active duy nhất.
+- 66 operator semantic profile.
+- 7.642 field profile.
+- 14 path template.
+- 14 simulation lịch sử, 13 hoàn tất.
+- 0 alpha promoted.
+- Alpha tốt nhất lịch sử: Sharpe 1.43, Fitness 0.98, turnover 0.028, self-correlation 0.9415.
+
+Chi tiết hiện hành phải đọc từ `docs/TRANG_THAI_HIEN_TAI.md` vì file này chỉ giữ bức tranh kiến trúc lâu dài.
+
+## Chính sách đối với 1.267 alpha Gemini cũ
+
+Các artifact có status `legacy_unverified` là đầu ra hàng loạt từ generator Gemini cũ. Chúng không được xem là 1.267 ý tưởng nghiên cứu hợp lệ.
+
+Chính sách v2:
+
+- giữ record trong SQLite để truy vết nguồn gốc;
+- không đưa vào novelty score;
+- không đưa vào subtree frequency;
+- không đưa vào empirical motif stats;
+- không dùng làm trial count hoặc scheduler evidence;
+- không dùng để chặn alpha mới chỉ vì giống output rác cũ.
+
+`alpha-os knowledge build` phải rebuild motif memory chỉ từ artifact nghiên cứu hợp lệ.
+
+## Kiến trúc research v2
+
+```text
+BRAIN catalogue
+      │
+      ├── active operator registry
+      │       ↓
+      │   Operator Knowledge Base
+      │
+      └── field catalogue
+              ↓
+          Field Profiler
+              │
+              ▼
+        Hypothesis LLM
+              │
+              ▼
+           AlphaPlan
+              │
+              ▼
+      semantic path planner
+              │
+              ▼
+      deterministic compiler
+              │
+      ┌───────┴────────┐
+      ▼                ▼
+ DSL/type gates   semantic gates
+      └───────┬────────┘
+              ▼
+       novelty/clone gate
+              │
+              ▼
+          simulation
+              │
+              ▼
+           evidence
+              │
+              ▼
+      empirical motif memory
+              │
+              ▼
+         scheduler v2
+       STOP / REFINE / BRANCH
 ```
 
-Sau khi mo cua so lenh moi:
+## Operator Knowledge Base
 
-```powershell
-Set-Location 'C:\Users\welcome\OneDrive\Desktop\wq-alpha-os-starter'
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-alpha-os status
+66 operator active được phân theo vai trò semantic chứ không chỉ category BRAIN.
+
+Các phân biệt bắt buộc:
+
+- `hump` ≠ `ts_decay_linear`;
+- `reverse` ≠ `inverse` ≠ `sign`;
+- `winsorize` ≠ `zscore`;
+- `group_mean` ≠ `group_neutralize`;
+- `ts_sum` ≠ `ts_mean`;
+- `ts_arg_max/min` là timing, không phải dispersion;
+- `ts_count_nans` là missingness/coverage feature;
+- `ts_delay` là lag/anchor, không phải change operator.
+
+## Field Profiler
+
+Mỗi field được mô tả ít nhất theo:
+
+- economic theme;
+- semantic form;
+- update cadence;
+- signedness/domain;
+- unit family;
+- sparsity;
+- peer dependence;
+- direction prior;
+- horizon prior;
+- preferred/discouraged operator roles;
+- confidence.
+
+Field semantics quyết định grammar. VECTOR không được đi thẳng vào time-series operator nếu chưa reduce.
+
+## 14 path template
+
+1. `slow_level_peer`
+2. `slow_change_peer`
+3. `relative_ratio`
+4. `vector_event_intensity`
+5. `vector_event_novelty`
+6. `extremum_recency`
+7. `information_staleness`
+8. `two_series_correlation`
+9. `regression_residual`
+10. `risk_dispersion`
+11. `peer_residual`
+12. `state_gated_core`
+13. `multi_horizon_consensus`
+14. `orthogonal_confirmation`
+
+`multi_horizon_consensus` là robustness/sensitivity, không được tính là novelty.
+
+## Anti-clone v2
+
+Mỗi artifact có nhiều fingerprint:
+
+- exact;
+- structural;
+- role motif;
+- semantic;
+- parameter-normalized;
+- subtree.
+
+Thay window trên cùng field/cùng motif không được coi là ý tưởng mới, trừ controlled diagnostic/sensitivity có lineage rõ.
+
+## Empirical memory
+
+Không học câu kiểu “`ts_rank` tốt”. Hệ thống học theo context:
+
+```text
+field theme
++ semantic form
++ motif/path
++ horizon bucket
++ settings
+→ Sharpe / Fitness / turnover / self-correlation / annual stability / pass rate
 ```
 
-Neu moi truong ao bi hong sau khi chuyen thu muc, tao lai:
+Chỉ simulation hoàn tất và artifact hợp lệ mới được dùng làm bằng chứng.
 
-```powershell
-Set-Location 'C:\Users\welcome\OneDrive\Desktop\wq-alpha-os-starter'
-Remove-Item -LiteralPath .\.venv -Recurse -Force
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e .
-alpha-os status
+## Scheduler v2
+
+Scheduler phải chẩn đoán failure mode trước khi sinh child.
+
+Ví dụ alpha hiện tại Sharpe 1.43, Fitness 0.98, corr 0.9415 phải đi vào:
+
+```text
+BRANCH_SEMANTIC
 ```
 
-## Kien truc hien tai
+Tức đổi field hoặc economic mechanism, không đổi 756 thành một window lân cận.
 
-- `src/wq_alpha_os/cli.py`: cua vao dong lenh `alpha-os`.
-- `src/wq_alpha_os/config.py`: doc cau hinh tu `.env`.
-- `src/wq_alpha_os/db.py`: tao va nang cap co so du lieu cuc bo SQLite.
-- `src/wq_alpha_os/brain/`: dang nhap, dong bo danh muc, mo phong, lay ket qua tu WorldQuant BRAIN.
-- `src/wq_alpha_os/research/`: sinh ung vien, chong trung, cham diem va tac tu Gemini.
-- `src/wq_alpha_os/providers/`: lop goi mo hinh ngon ngu, hien co Gemini va may chu tuong thich OpenAI.
-- `data/db/`: co so du lieu cuc bo, la nguon su that cua du an.
-- `data/evidence/`: bang chung, goi cau nhac, phan hoi mo hinh, ket qua mo phong.
-- `data/exports/`: tep xuat ra de xem, dua vao Google Sheets, hoac mo trinh mo phong.
-- `scripts/run_research.ps1`: chay mot vong nghien cuu tu dong.
-- `tests/`: kiem thu.
+Một research cycle chuẩn có budget 12:
 
-## Kien truc tac tu sinh alpha
+- 6 hypothesis mới;
+- 3 targeted refinement;
+- 3 diversity/robustness branch.
 
-Muc tieu khong phai sinh nhieu cong thuc na na alpha cu, ma sinh gia thuyet moi co co che kinh te ro rang.
+## Workflow phối hợp ChatGPT ↔ Codex
 
-Luong chinh:
+ChatGPT web dùng GitHub làm nguồn trạng thái chung. Codex trong VS Code có quyền đọc SQLite/evidence cục bộ và sau mỗi task phải đưa phần trạng thái an toàn lên GitHub.
 
-1. Dong bo danh muc truong du lieu va toan tu tu WorldQuant BRAIN.
-2. Tao goi nghien cuu cuc bo gom truong du lieu uu tien, bai hoc that bai tong hop, va quy tac ghep toan tu.
-3. Goi Gemini de tao the gia thuyet, chua cho phep viet cong thuc.
-4. Goi Gemini de thiet ke cong thuc nho tu tung the gia thuyet.
-5. Goi Gemini lan nua de phan bien cong thuc.
-6. Kiem tra cuc bo: cu phap, kieu du lieu, thu tu toan tu, chong trung chinh xac va gan dung.
-7. Dua ung vien hop le vao hang cho mo phong.
-8. Mo phong tren WorldQuant BRAIN, lay ket qua, cham diem, xuat tep.
+Kết thúc task bằng:
 
-## Nhom toan tu du kien
+```powershell
+.\scripts\finalize_task.ps1 -Message "<commit message>"
+```
 
-Y tuong chinh: khong boc toan tu lung tung. Moi cong thuc phai di qua mot duong hop ly.
+Không được coi task là xong nếu chưa cập nhật `docs/TRANG_THAI_HIEN_TAI.md`, `docs/generated/research_state.json`, commit và push branch hiện tại.
 
-- Lam min/lam on chuoi thoi gian: `ts_rank`, `ts_zscore`, `ts_mean`, `ts_delta`, `ts_decay_linear`.
-- Xep hang mat cat ngang: `rank`, `group_rank`, `normalize`.
-- Trung lap vai tro can han che: khong chong nhieu ham cung tac dung xep hang/chuan hoa neu khong co ly do.
-- Dao chieu tin hieu: `reverse`, hoac he so am trong `multiply`.
-- Ket hop nhanh hai nhanh: `add`, `subtract`, `multiply`, `signed_power`.
-- Du lieu vec-to phai rut gon truoc khi dung nhu ma tran.
-- Nhom trung hoa uu tien: nganh, phan nganh, quoc gia, thi truong, tuy tung universe.
+## Cổng tiếp theo
 
-## Huong toi uu chat luong
+Trước khi tiêu simulation mới:
 
-- Tang do moi bang cach uu tien truong du lieu chua thu, nhom du lieu chua khai thac va co che khac alpha cu.
-- Luu ly do that bai theo nhom, khong chi theo tung cong thuc.
-- Tao the gia thuyet truoc, cong thuc sau, de tranh Gemini clone alpha mau.
-- Moi cong thuc moi can co ly do tai sao du lieu nay co the du bao loi nhuan.
-- Sau khi co ket qua mo phong, uu tien hoc tu alpha gan dat: Sharpe, Fitness, turnover, coverage, self correlation, drawdown va so nam duong.
-- Neu alpha gan dat nhung self correlation cao, tao bien the bang truong/nhom co che khac, khong chi doi tham so.
-
-## Tien do hien tai
-
-- Da co dong bo danh muc truong du lieu va toan tu.
-- Da co co so du lieu cuc bo va bang chung trong `data/`.
-- Da co luong mo phong, lam moi ket qua, cham diem, xuat tep.
-- Da co bo chong trung de tranh gui lai alpha da co ho so mo phong.
-- Da them nen tac tu Gemini: kham pha gia thuyet, thiet ke cong thuc, phan bien, kiem tra cuc bo.
-- Viec goi Gemini that can duoc cho phep gui goi ngu canh nghien cuu ra ngoai.
-
-## Viec lam tiep
-
-- Chay that `alpha-os agent discover --count 2` khi nguoi dung cho phep gui goi ngu canh toi Gemini.
-- Chay `alpha-os agent design --limit 2 --per-card 1` de tao ung vien dau tien.
-- Mo phong so luong nho, xem ket qua, roi moi tang toc.
-- Cai thien bo rut kinh nghiem sau mo phong de Gemini thay bai hoc tong hop thay vi clone cong thuc cu.
-- Sau nay co the xuat `simulator_url` vao Google Sheets de bam mo trang WorldQuant BRAIN da dien alpha.
+1. rebuild knowledge sau khi cách ly 1.267 legacy artifact;
+2. kiểm tra motif active chỉ còn artifact nghiên cứu thật;
+3. audit chất lượng phân loại 7.642 field;
+4. đọc `alpha-os agent packet --count 6` và kiểm tra field/path diversity;
+5. chỉ khi packet hợp lý mới cho Gemini tạo hypothesis card;
+6. dry-run AlphaPlan trước;
+7. sau đó mới tiêu batch 12 simulation đầu tiên của v2.

@@ -9,7 +9,7 @@ from typing import Any
 from ..config import load_defaults
 from ..db import json_dumps, utc_now
 from ..brain.simulation import _records, settings_hash
-from .scorer import check_summary, promotable
+from .scorer import check_summary, promotable, research_utility, score_vector
 
 
 def _verify_evidence(row: sqlite3.Row) -> list[str]:
@@ -38,19 +38,10 @@ def _verify_evidence(row: sqlite3.Row) -> list[str]:
 
 
 def _annual_stability(payload: Any, minimum_years: int = 3) -> tuple[dict[str, Any], list[str]]:
-    """Summarize yearly evidence and flag fragile performance.
-
-    WorldQuant currently returns rows as ``{"value": [...]}``; the shared
-    record decoder also accepts the older bare-list format.  A single weak
-    year is tolerated, but missing history, repeated losses, or a negative
-    annual Sharpe keep an alpha on hold.
-    """
+    """Summarize yearly evidence and flag fragile performance."""
     rows = _records(payload)
     if not rows:
         return {}, ["Chưa đọc được dữ liệu kết quả theo năm."]
-    # Legacy fixtures may only contain opaque rows without a schema.  Keep
-    # those usable for evidence checks; stability is evaluated once BRAIN
-    # supplies named columns.
     if not any(key in rows[0] for key in ("year", "pnl", "sharpe")):
         return {}, []
     is_rows = [row for row in rows if str(row.get("stage") or "IS").upper() == "IS"]
@@ -90,8 +81,13 @@ def _annual_stability(payload: Any, minimum_years: int = 3) -> tuple[dict[str, A
 
 def review_pending(connection: sqlite3.Connection, limit: int = 20) -> list[dict[str, Any]]:
     rows = connection.execute(
-        """SELECT a.id artifact_id,a.family,a.expression,r.* FROM alpha_artifacts a
+        """SELECT a.id artifact_id,a.family,a.expression,a.complexity_nodes,a.complexity_depth,
+                  coalesce(m.novelty_score,0.5) novelty_score,
+                  coalesce(t.effective_trial_count,0) effective_trial_count,r.*
+           FROM alpha_artifacts a
            JOIN simulation_runs r ON r.artifact_id=a.id
+           LEFT JOIN artifact_motifs m ON m.artifact_id=a.id
+           LEFT JOIN family_trial_stats t ON t.family=a.family
            WHERE r.platform_status='COMPLETE' AND NOT EXISTS(
              SELECT 1 FROM reviews v WHERE v.simulation_run_id=r.id)
            ORDER BY r.finished_at DESC LIMIT ?""", (limit,),
@@ -101,7 +97,7 @@ def review_pending(connection: sqlite3.Connection, limit: int = 20) -> list[dict
     for row in rows:
         metrics = {"sharpe": row["sharpe"], "fitness": row["fitness"], "turnover": row["turnover"],
                    "returns": row["returns_value"], "drawdown": row["drawdown"], "margin": row["margin"],
-                   "selfCorrelation": row["self_correlation"]}
+                   "subuniverseSharpe": row["subuniverse_sharpe"], "selfCorrelation": row["self_correlation"]}
         checks = json.loads(row["checks_json"] or "[]")
         _, failed, failures = check_summary(checks)
         evidence_errors = _verify_evidence(row)
@@ -122,13 +118,20 @@ def review_pending(connection: sqlite3.Connection, limit: int = 20) -> list[dict
         if failed:
             warnings.append("Kiểm tra thất bại: " + ", ".join(failures))
         evidence_valid = not evidence_errors
+        objective_vector = score_vector(
+            metrics, checks, annual_summary=annual_summary,
+            complexity_nodes=row["complexity_nodes"], complexity_depth=row["complexity_depth"],
+            novelty_score=row["novelty_score"], effective_trial_count=row["effective_trial_count"],
+        )
+        utility = research_utility(objective_vector)
         verdict = "promote" if promotable(metrics, checks, limits) and not warnings else "hold"
         report = {"verdict": verdict, "metrics": metrics, "failed_checks": failures,
-                  "annual_stability": annual_summary, "warnings": warnings,
+                  "annual_stability": annual_summary, "objective_vector": objective_vector,
+                  "research_utility": utility, "warnings": warnings,
                   "evidence_path": row["response_path"]}
         connection.execute(
             "INSERT INTO reviews VALUES(?,?,?,?,?,?,?,?,?)",
-            (str(uuid.uuid4()), row["artifact_id"], row["id"], "deterministic_reviewer_v1", verdict,
+            (str(uuid.uuid4()), row["artifact_id"], row["id"], "deterministic_reviewer_v2", verdict,
              int(evidence_valid), json_dumps(warnings), json_dumps(report), utc_now()),
         )
         if verdict == "promote":

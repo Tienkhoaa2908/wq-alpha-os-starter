@@ -11,6 +11,7 @@ from ..db import json_dumps, utc_now
 from ..dsl.fingerprint import Fingerprint, similarity
 from ..dsl.validator import validate_expression
 from .motifs import motif_fingerprint, novelty_diagnostics, store_artifact_motif
+from .semantic_validator import validate_semantics
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,11 @@ def ingest_candidate(
     )
     if not report.valid or report.fingerprint is None:
         return _reject(connection, expression, family, "validation_failed", report.to_dict(), generator)
+
+    semantic = validate_semantics(expression, connection)
+    if not semantic.valid:
+        return _reject(connection, expression, family, "semantic_validation_failed", semantic.to_dict(), generator)
+
     fp = report.fingerprint
     nearest_id: str | None = None
     nearest = 0.0
@@ -90,9 +96,9 @@ def ingest_candidate(
         return _reject(connection, expression, family, "near_duplicate", {"similarity": nearest, "nearest_id": nearest_id}, generator)
 
     # Parameter-normalized fingerprint preserves field names while coarsening
-    # numeric constants/windows.  Therefore the same field+motif with only a
+    # numeric constants/windows. Therefore the same field+motif with only a
     # parameter tweak is blocked unless lineage explicitly marks a controlled
-    # diagnostic/sensitivity test.  Role-motif frequency remains only a soft
+    # diagnostic/sensitivity test. Role-motif frequency remains only a soft
     # novelty penalty, so proven motifs can still be explored on new fields.
     motif = motif_fingerprint(connection, expression)
     novelty = novelty_diagnostics(connection, motif)
@@ -102,12 +108,16 @@ def ingest_candidate(
             {"similarity": nearest, "parameter_hash": motif.parameter_hash, "novelty": novelty}, generator,
         )
 
+    validation_payload = {
+        "dsl": report.to_dict(),
+        "semantic": semantic.to_dict(),
+    }
     artifact_id = str(uuid.uuid4())
     connection.execute(
         """INSERT INTO alpha_artifacts VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
         (artifact_id, parent_id, hypothesis_id, family, expression, fp.canonical, fp.exact_hash,
          fp.structural_hash, json_dumps(fp.fields), json_dumps(fp.operators), rationale, mutation,
-         generator, model_name, prompt_hash, prompt_version, json_dumps(report.to_dict()),
+         generator, model_name, prompt_hash, prompt_version, json_dumps(validation_payload),
          report.node_count, report.depth, "validated", None, utc_now()),
     )
     motif_result = store_artifact_motif(connection, artifact_id, expression)
@@ -123,6 +133,9 @@ def ingest_candidate(
                 "semantic_hash": motif.semantic_hash,
                 "parameter_hash": motif.parameter_hash,
                 "novelty": motif_result["diagnostics"],
+                "semantic_warnings": [
+                    item for item in semantic.to_dict()["issues"] if item["severity"] == "warning"
+                ],
             }),
             utc_now(),
         ),

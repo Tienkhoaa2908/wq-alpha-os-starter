@@ -1,83 +1,46 @@
 # Trạng thái hiện tại
 
-> Snapshot phối hợp tạm thời từ lần chạy cục bộ gần nhất. Sau khi pull branch mới, chạy `scripts/finalize_task.ps1` để tệp này được tạo lại trực tiếp từ SQLite.
+> Tệp này được tạo bởi `alpha-os snapshot`. Không chỉnh số liệu thủ công; hãy cập nhật từ SQLite rồi commit/push.
 
-- Branch làm việc: `alpha-research-v2`
-- Test cục bộ gần nhất: **47/47 đạt**.
-- Knowledge build cục bộ gần nhất trước khi áp dụng legacy quarantine:
-  - 66/66 operator đã có semantic profile;
-  - 7.642/7.642 field đã có field profile;
-  - 14 path template;
-  - 1.281 motif đã từng được materialize;
-  - 13 simulation hoàn tất tạo 8 empirical context.
+- Thời điểm: `2026-09-05T15:24:28.322150+00:00`
+- Branch: `alpha-research-v2`
+- Commit: `d93a092cee71ab4a0b151ce179cb4b192cb9a844`
 
-## Catalog
+## Danh mục và tri thức
 
 - Dataset: **16**
-- Field: **7.642**
-- BRAIN operator active duy nhất: **66**
+- Field: **7642**; đã lập hồ sơ: **7642**
+- BRAIN operator active: **66**; đã lập hồ sơ: **66**
+- Path template: **14**
 
-## Artifact
+## Kho nghiên cứu
 
-- Tổng artifact vật lý trong SQLite: **1.281**
-- `legacy_unverified`: **1.267**
-- `tested`: **13**
-- `validated`: **1**
+- Alpha artifact vật lý: **1281**
+- Artifact đủ điều kiện tham gia nghiên cứu v2: **14**
+- Legacy Gemini bị cách ly: **1267**
+- Motif đang hoạt động: **14**; empirical context: **8**
+- Hypothesis card: **0**; AlphaPlan: **0**
 
-1.267 `legacy_unverified` là output hàng loạt của generator Gemini cũ và không được xem là research evidence v2.
+Legacy policy: giữ lại record cũ để truy vết, nhưng không cho chúng ảnh hưởng novelty, subtree frequency hay empirical memory của v2.
 
-Code hiện tại trên branch đã đổi policy thành:
+## Mô phỏng
 
-```text
-legacy_unverified
-→ giữ record để truy vết
-→ loại khỏi novelty
-→ loại khỏi subtree frequency
-→ loại khỏi empirical motif memory
-→ không dùng cho scheduler/trial evidence
-```
+- Tổng: **14**
+- Trạng thái: `{"COMPLETE": 13, "ERROR": 1}`
 
-Sau khi máy cục bộ pull branch mới và chạy lại `alpha-os knowledge build`, motif memory phải được rebuild chỉ từ artifact nghiên cứu hợp lệ. Với trạng thái hiện tại, kỳ vọng khoảng **14 artifact** được materialize thay vì 1.281; con số chính xác phải lấy từ lần chạy cục bộ sau pull.
-
-## Simulation
-
-- Đã gửi: **14**
-- Hoàn tất: **13**
-- Lỗi: **1**
-- Promoted: **0**
-
-## Alpha tốt nhất lịch sử
+## Alpha tốt nhất theo Sharpe hiện có
 
 - Family: `value_cashflow_multihorizon`
-- Sharpe: **1.43**
-- Fitness: **0.98**
-- Turnover: **0.028**
+- Sharpe: **1.43**; Fitness: **0.98**; Turnover: **0.028**
 - Self-correlation: **0.9415**
+- Annual: `{"min_sharpe": null, "positive_sharpe_years": 0, "years": 0}`
 
-Kết luận nghiên cứu: core signal có sức mạnh nhưng diversity quá thấp. Scheduler v2 phải `BRANCH_SEMANTIC`, không tiếp tục đổi window/weight lân cận.
-
-## Tiến độ research v2
-
-Đã có:
-
-- active BRAIN operator registry;
-- Operator Knowledge Base cho 66 operator;
-- Field Profiler cho 7.642 field;
-- 14 path template;
-- AlphaPlan + deterministic compiler;
-- semantic validator;
-- exact/structural/motif/semantic/parameter/subtree fingerprints;
-- empirical motif memory;
-- scheduler theo failure mode;
-- multi-objective scoring;
-- state snapshot exporter;
-- `scripts/finalize_task.ps1` để test → rebuild → snapshot → commit → push.
+```text
+normalize(add(multiply(0.75, hump(reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 756), industry)), hump=0.01)), multiply(0.25, reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 252), industry))), filter=true), useStd=true, limit=3)
+```
 
 ## Cổng tiếp theo
 
-1. Pull branch `alpha-research-v2` mới nhất.
-2. Chạy lại test.
-3. Chạy `alpha-os knowledge build` để loại 1.267 legacy khỏi motif memory.
-4. Chạy `scripts/finalize_task.ps1` để snapshot sạch được push lên GitHub.
-5. Audit phân phối semantic của 7.642 field và `agent packet --count 6`.
-6. Chưa simulate batch mới cho tới khi audit trên đạt.
+Audit chất lượng phân loại field và packet tác tử v2 trước khi tiêu thêm lượt mô phỏng BRAIN.
+
+Nguồn chi tiết máy đọc được: `docs/generated/research_state.json`.

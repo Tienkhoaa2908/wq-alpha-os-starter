@@ -1,8 +1,23 @@
 {
   "snapshot": {
-    "source": "temporary coordination snapshot from latest local run",
-    "authoritative_after_next_finalize": true,
-    "branch": "alpha-research-v2"
+    "generated_at": "2026-09-05T15:24:28.322150+00:00",
+    "git_branch": "alpha-research-v2",
+    "git_commit": "d93a092cee71ab4a0b151ce179cb4b192cb9a844",
+    "source": "local SQLite sanitized snapshot"
+  },
+  "configuration": {
+    "instrumentType": "EQUITY",
+    "region": "USA",
+    "universe": "TOP3000",
+    "delay": 1,
+    "decay": 6,
+    "neutralization": "INDUSTRY",
+    "truncation": 0.01,
+    "pasteurization": "ON",
+    "unitHandling": "VERIFY",
+    "nanHandling": "OFF",
+    "language": "FASTEXPR",
+    "visualization": false
   },
   "catalog": {
     "datasets": 16,
@@ -13,38 +28,113 @@
     "path_templates": 14
   },
   "research": {
+    "hypotheses": 1,
+    "hypothesis_cards": 0,
+    "alpha_plans": 0,
     "artifacts_total": 1281,
+    "artifacts_research_eligible": 14,
+    "legacy_unverified_quarantined": 1267,
     "artifact_statuses": {
       "legacy_unverified": 1267,
       "tested": 13,
       "validated": 1
     },
-    "legacy_policy": "retain for provenance; exclude from v2 novelty, subtree frequency, empirical motif memory, scheduler and trial evidence",
-    "motifs_before_legacy_quarantine_rebuild": 1281,
-    "expected_research_eligible_artifacts_after_rebuild": 14,
-    "hypothesis_cards": 0,
-    "alpha_plans": 0,
-    "empirical_contexts": 8
+    "motifs_active": 14,
+    "motif_contexts": 8,
+    "legacy_policy": "retain for provenance; exclude from v2 novelty, subtree and empirical memory"
   },
   "simulations": {
     "total": 14,
-    "completed": 13,
-    "failed": 1,
-    "promoted": 0
+    "statuses": {
+      "COMPLETE": 13,
+      "ERROR": 1
+    }
   },
   "best_alpha": {
+    "artifact_id": "05c774f3-3d3f-4b0b-a3af-12d87648d347",
     "family": "value_cashflow_multihorizon",
+    "expression": "normalize(add(multiply(0.75, hump(reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 756), industry)), hump=0.01)), multiply(0.25, reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 252), industry))), filter=true), useStd=true, limit=3)",
+    "status": "tested",
     "sharpe": 1.43,
     "fitness": 0.98,
     "turnover": 0.028,
     "self_correlation": 0.9415,
-    "research_action": "BRANCH_SEMANTIC"
+    "annual": {
+      "years": 0,
+      "positive_sharpe_years": 0,
+      "min_sharpe": null
+    },
+    "platform_alpha_id": "d5Oq1owX",
+    "finished_at": "2026-09-04T16:24:59.701201+00:00"
   },
-  "next_gate": [
-    "pull latest alpha-research-v2",
-    "run full tests",
-    "rebuild knowledge with legacy quarantine",
-    "run scripts/finalize_task.ps1 so this file is regenerated from SQLite",
-    "audit field semantic distribution and agent packet before new simulations"
-  ]
+  "families": [
+    {
+      "family": "value_cashflow_multihorizon",
+      "completed_runs": 8,
+      "best_reward": -0.132104,
+      "effective_trial_count": 0,
+      "semantic_branches": 0,
+      "parameter_only_trials": 0,
+      "stopped": 0,
+      "stop_reason": null
+    },
+    {
+      "family": "analyst_revision_acceleration",
+      "completed_runs": 1,
+      "best_reward": -2.538528,
+      "effective_trial_count": 0,
+      "semantic_branches": 0,
+      "parameter_only_trials": 0,
+      "stopped": 0,
+      "stop_reason": null
+    },
+    {
+      "family": "low_idiosyncratic_risk",
+      "completed_runs": 1,
+      "best_reward": -3.741152,
+      "effective_trial_count": 0,
+      "semantic_branches": 0,
+      "parameter_only_trials": 0,
+      "stopped": 0,
+      "stop_reason": null
+    },
+    {
+      "family": "quality_profitability_persistence",
+      "completed_runs": 1,
+      "best_reward": -4.25,
+      "effective_trial_count": 0,
+      "semantic_branches": 0,
+      "parameter_only_trials": 0,
+      "stopped": 0,
+      "stop_reason": null
+    },
+    {
+      "family": "revision_quality_confirmation",
+      "completed_runs": 1,
+      "best_reward": -1.837936,
+      "effective_trial_count": 0,
+      "semantic_branches": 0,
+      "parameter_only_trials": 0,
+      "stopped": 0,
+      "stop_reason": null
+    },
+    {
+      "family": "value_revision_confirmation",
+      "completed_runs": 1,
+      "best_reward": -1.529096,
+      "effective_trial_count": 0,
+      "semantic_branches": 0,
+      "parameter_only_trials": 0,
+      "stopped": 0,
+      "stop_reason": null
+    }
+  ],
+  "coordination": {
+    "source_of_truth": [
+      "00_TONG_QUAN_DU_AN.md",
+      "docs/TRANG_THAI_HIEN_TAI.md",
+      "docs/generated/research_state.json"
+    ],
+    "next_gate": "audit field semantics and v2 agent packet before spending new BRAIN simulations"
+  }
 }

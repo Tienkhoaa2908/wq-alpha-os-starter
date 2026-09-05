@@ -10,7 +10,7 @@ from typing import Any, Iterator
 from .config import Settings
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 DDL = """
@@ -113,6 +113,63 @@ SELECT operator_key,name,category,signature,description,raw_json,snapshot_id,upd
 FROM ranked
 WHERE name_rank = 1;
 
+CREATE TABLE IF NOT EXISTS operator_profiles (
+    operator_name TEXT PRIMARY KEY,
+    snapshot_id TEXT,
+    active INTEGER NOT NULL,
+    primary_role TEXT NOT NULL,
+    secondary_roles_json TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    input_kind TEXT NOT NULL,
+    output_kind TEXT NOT NULL,
+    state_class TEXT NOT NULL,
+    unit_effect TEXT NOT NULL,
+    information_loss TEXT NOT NULL,
+    tail_sensitivity TEXT NOT NULL,
+    coverage_effect TEXT NOT NULL,
+    turnover_tendency TEXT NOT NULL,
+    preferred_field_forms_json TEXT NOT NULL,
+    discouraged_field_forms_json TEXT NOT NULL,
+    hard_rules_json TEXT NOT NULL,
+    soft_rules_json TEXT NOT NULL,
+    parameter_policy TEXT NOT NULL,
+    source_confidence REAL NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS field_profiles (
+    field_key TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    dataset_name TEXT,
+    data_type TEXT NOT NULL,
+    economic_theme TEXT NOT NULL,
+    secondary_themes_json TEXT NOT NULL,
+    semantic_form TEXT NOT NULL,
+    update_cadence TEXT NOT NULL,
+    signedness TEXT NOT NULL,
+    unit_family TEXT NOT NULL,
+    sparsity_class TEXT NOT NULL,
+    peer_dependence TEXT NOT NULL,
+    direction_prior TEXT NOT NULL,
+    direction_confidence TEXT NOT NULL,
+    horizon_prior_json TEXT NOT NULL,
+    preferred_roles_json TEXT NOT NULL,
+    discouraged_roles_json TEXT NOT NULL,
+    classification_source TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(field_key) REFERENCES fields(field_key)
+);
+CREATE INDEX IF NOT EXISTS idx_field_profiles_theme ON field_profiles(economic_theme);
+CREATE INDEX IF NOT EXISTS idx_field_profiles_form ON field_profiles(semantic_form);
+
+CREATE TABLE IF NOT EXISTS path_template_registry (
+    template_id TEXT PRIMARY KEY,
+    definition_json TEXT NOT NULL,
+    enabled_by_default INTEGER NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS hypotheses (
     id TEXT PRIMARY KEY,
     family TEXT NOT NULL,
@@ -178,6 +235,80 @@ CREATE TABLE IF NOT EXISTS alpha_artifacts (
 CREATE INDEX IF NOT EXISTS idx_artifacts_status ON alpha_artifacts(status);
 CREATE INDEX IF NOT EXISTS idx_artifacts_family ON alpha_artifacts(family);
 CREATE INDEX IF NOT EXISTS idx_artifacts_structure ON alpha_artifacts(structural_hash);
+
+CREATE TABLE IF NOT EXISTS alpha_plans (
+    id TEXT PRIMARY KEY,
+    hypothesis_id TEXT,
+    card_id TEXT,
+    family TEXT NOT NULL,
+    template_id TEXT NOT NULL,
+    request_json TEXT NOT NULL,
+    resolved_json TEXT NOT NULL,
+    compiler_version TEXT NOT NULL,
+    status TEXT NOT NULL,
+    artifact_id TEXT,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(hypothesis_id) REFERENCES hypotheses(id),
+    FOREIGN KEY(card_id) REFERENCES hypothesis_cards(id),
+    FOREIGN KEY(artifact_id) REFERENCES alpha_artifacts(id)
+);
+CREATE INDEX IF NOT EXISTS idx_alpha_plans_template ON alpha_plans(template_id);
+CREATE INDEX IF NOT EXISTS idx_alpha_plans_status ON alpha_plans(status);
+
+CREATE TABLE IF NOT EXISTS artifact_motifs (
+    artifact_id TEXT PRIMARY KEY,
+    role_motif_hash TEXT NOT NULL,
+    semantic_hash TEXT NOT NULL,
+    parameter_hash TEXT NOT NULL,
+    role_path_json TEXT NOT NULL,
+    field_themes_json TEXT NOT NULL,
+    field_forms_json TEXT NOT NULL,
+    subtree_hashes_json TEXT NOT NULL,
+    parameter_normalized TEXT NOT NULL,
+    novelty_score REAL NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(artifact_id) REFERENCES alpha_artifacts(id)
+);
+CREATE INDEX IF NOT EXISTS idx_artifact_motifs_role ON artifact_motifs(role_motif_hash);
+CREATE INDEX IF NOT EXISTS idx_artifact_motifs_semantic ON artifact_motifs(semantic_hash);
+CREATE INDEX IF NOT EXISTS idx_artifact_motifs_parameter ON artifact_motifs(parameter_hash);
+
+CREATE TABLE IF NOT EXISTS subtree_stats (
+    subtree_hash TEXT PRIMARY KEY,
+    artifact_count INTEGER NOT NULL,
+    last_artifact_id TEXT,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(last_artifact_id) REFERENCES alpha_artifacts(id)
+);
+
+CREATE TABLE IF NOT EXISTS motif_stats (
+    context_key TEXT PRIMARY KEY,
+    role_motif_hash TEXT NOT NULL,
+    field_theme TEXT NOT NULL,
+    horizon_bucket TEXT NOT NULL,
+    completed_runs INTEGER NOT NULL,
+    median_sharpe REAL,
+    median_fitness REAL,
+    median_turnover REAL,
+    median_self_correlation REAL,
+    pass_rate REAL,
+    annual_min_sharpe REAL,
+    uncertainty REAL,
+    stats_json TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_motif_stats_role ON motif_stats(role_motif_hash);
+CREATE INDEX IF NOT EXISTS idx_motif_stats_theme ON motif_stats(field_theme);
+
+CREATE TABLE IF NOT EXISTS family_trial_stats (
+    family TEXT PRIMARY KEY,
+    effective_trial_count INTEGER NOT NULL DEFAULT 0,
+    semantic_branches INTEGER NOT NULL DEFAULT 0,
+    parameter_only_trials INTEGER NOT NULL DEFAULT 0,
+    stopped INTEGER NOT NULL DEFAULT 0,
+    stop_reason TEXT,
+    updated_at TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS rejected_candidates (
     id TEXT PRIMARY KEY,

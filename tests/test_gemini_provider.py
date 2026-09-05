@@ -71,6 +71,79 @@ class GeminiProviderTests(unittest.TestCase):
         self.assertEqual(payload["generationConfig"]["responseMimeType"], "application/json")
 
     @patch("wq_alpha_os.providers.gemini.urllib.request.urlopen")
+    def test_resolve_model_uses_available_generate_content_model(self, urlopen):
+        urlopen.return_value = _Response({
+            "models": [
+                {
+                    "name": "models/text-embedding-004",
+                    "supportedGenerationMethods": ["embedContent"],
+                },
+                {
+                    "name": "models/gemini-3.8-flash",
+                    "supportedGenerationMethods": ["generateContent", "countTokens"],
+                },
+            ]
+        })
+
+        provider = GeminiProvider(_settings())
+        model = provider.resolve_model()
+
+        self.assertEqual(model, "gemini-3.8-flash")
+        self.assertEqual(provider.selected_model, "gemini-3.8-flash")
+        request = urlopen.call_args.args[0]
+        self.assertIn("/models?pageSize=1000", request.full_url)
+        self.assertNotIn("secret-api-key", request.full_url)
+
+    @patch("wq_alpha_os.providers.gemini.urllib.request.urlopen")
+    def test_404_model_retries_once_with_available_fallback(self, urlopen):
+        not_found = urllib.error.HTTPError(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent",
+            404,
+            "not found",
+            {},
+            None,
+        )
+        urlopen.side_effect = [
+            not_found,
+            _Response({
+                "models": [
+                    {
+                        "name": "models/gemini-3.8-flash",
+                        "supportedGenerationMethods": ["generateContent"],
+                    }
+                ]
+            }),
+            _Response({
+                "candidates": [{"content": {"parts": [{"text": '{"ok": true}'}]}}]
+            }),
+        ]
+
+        provider = GeminiProvider(_settings())
+        answer = provider.complete("quy tắc", "nội dung")
+
+        self.assertEqual(answer, '{"ok": true}')
+        self.assertEqual(provider.selected_model, "gemini-3.8-flash")
+        self.assertIn("gemini-3.8-flash:generateContent", urlopen.call_args_list[2].args[0].full_url)
+
+    @patch("wq_alpha_os.providers.gemini.urllib.request.urlopen")
+    def test_resolve_model_keeps_configured_model_when_available(self, urlopen):
+        urlopen.return_value = _Response({
+            "models": [
+                {
+                    "name": "models/gemini-2.5-pro",
+                    "supportedGenerationMethods": ["generateContent"],
+                },
+                {
+                    "name": "models/gemini-3.8-flash",
+                    "supportedGenerationMethods": ["generateContent"],
+                },
+            ]
+        })
+
+        provider = GeminiProvider(_settings())
+        self.assertEqual(provider.resolve_model(), "gemini-2.5-pro")
+
+    @patch("wq_alpha_os.providers.gemini.urllib.request.urlopen")
     def test_authentication_failure_never_echoes_key(self, urlopen):
         urlopen.side_effect = urllib.error.HTTPError(
             "https://generativelanguage.googleapis.com", 403, "forbidden", {}, None

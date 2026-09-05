@@ -8,6 +8,7 @@ from typing import Any
 
 from ..config import load_defaults
 from ..db import utc_now
+from .recordsets import decode_recordset
 from .scorer import check_summary
 
 
@@ -37,9 +38,8 @@ def _annual_negative(annual_json: Any) -> bool:
         payload = json.loads(annual_json) if isinstance(annual_json, str) else annual_json
     except (TypeError, ValueError):
         return False
-    rows = payload if isinstance(payload, list) else payload.get("value", []) if isinstance(payload, dict) else []
-    for row in rows:
-        if not isinstance(row, dict) or str(row.get("stage") or "IS").upper() != "IS":
+    for row in decode_recordset(payload):
+        if str(row.get("stage") or "IS").upper() != "IS":
             continue
         sharpe = _number(row.get("sharpe"))
         pnl = _number(row.get("pnl"))

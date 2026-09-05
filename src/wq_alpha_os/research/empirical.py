@@ -53,9 +53,28 @@ def _context_key(role_hash: str, theme: str, horizon: str) -> str:
     return f"{role_hash}|{theme}|{horizon}"
 
 
+def _horizon_from_plan(resolved_json: str | None) -> str:
+    """Read the coarse horizon from AlphaPlan JSON.
+
+    ``alpha_plans`` deliberately stores the resolved plan as JSON rather than
+    duplicating every plan attribute as a SQL column. Legacy artifacts usually
+    have no plan row at all, so they fall back to ``legacy_or_unknown``.
+    """
+    if not resolved_json:
+        return "legacy_or_unknown"
+    try:
+        payload = json.loads(resolved_json)
+    except (TypeError, ValueError):
+        return "legacy_or_unknown"
+    if not isinstance(payload, dict):
+        return "legacy_or_unknown"
+    value = str(payload.get("horizon_bucket") or "").strip()
+    return value or "legacy_or_unknown"
+
+
 def rebuild_motif_stats(connection: sqlite3.Connection) -> dict[str, int]:
     rows = connection.execute(
-        """SELECT r.*,m.role_motif_hash,m.field_themes_json,p.horizon_bucket
+        """SELECT r.*,m.role_motif_hash,m.field_themes_json,p.resolved_json
            FROM simulation_runs r
            JOIN artifact_motifs m ON m.artifact_id=r.artifact_id
            LEFT JOIN alpha_plans p ON p.artifact_id=r.artifact_id
@@ -70,7 +89,7 @@ def rebuild_motif_stats(connection: sqlite3.Connection) -> dict[str, int]:
         except (TypeError, ValueError):
             themes = []
         theme = str(themes[0] if themes else "unknown")
-        horizon = str(row["horizon_bucket"] or "legacy_or_unknown")
+        horizon = _horizon_from_plan(row["resolved_json"])
         key = _context_key(row["role_motif_hash"], theme, horizon)
         groups.setdefault(key, []).append(row)
         meta[key] = (row["role_motif_hash"], theme, horizon)

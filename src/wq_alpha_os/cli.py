@@ -138,10 +138,13 @@ def cmd_export(args: argparse.Namespace) -> None:
 
 
 def cmd_status(_: argparse.Namespace) -> None:
+    from .operator_registry import active_brain_operator_count
+
     initialize()
     with session() as connection:
         tables = ("datasets", "fields", "operators", "hypotheses", "hypothesis_cards", "alpha_artifacts", "rejected_candidates", "simulation_runs", "reviews")
         counts = {name: connection.execute(f"SELECT count(*) FROM {name}").fetchone()[0] for name in tables}
+        counts["operators"] = active_brain_operator_count(connection)
         statuses = {row[0]: row[1] for row in connection.execute("SELECT status,count(*) FROM alpha_artifacts GROUP BY status")}
         families = [dict(row) for row in connection.execute(
             "SELECT family,completed_runs,total_reward,best_reward,last_artifact_id FROM family_stats ORDER BY best_reward DESC"

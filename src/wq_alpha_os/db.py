@@ -10,7 +10,7 @@ from typing import Any, Iterator
 from .config import Settings
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 DDL = """
@@ -91,6 +91,27 @@ CREATE TABLE IF NOT EXISTS operators (
 );
 
 CREATE INDEX IF NOT EXISTS idx_operators_name ON operators(name);
+
+CREATE VIEW IF NOT EXISTS active_brain_operators AS
+WITH latest_snapshot AS (
+    SELECT id
+    FROM catalog_snapshots
+    WHERE source = 'brain_api'
+    ORDER BY created_at DESC, rowid DESC
+    LIMIT 1
+), ranked AS (
+    SELECT o.*,
+           row_number() OVER (
+               PARTITION BY lower(o.name)
+               ORDER BY length(coalesce(o.description, '')) DESC, o.rowid DESC
+           ) AS name_rank
+    FROM operators o
+    JOIN latest_snapshot s ON s.id = o.snapshot_id
+    WHERE lower(coalesce(o.category, '')) <> 'typed_registry'
+)
+SELECT operator_key,name,category,signature,description,raw_json,snapshot_id,updated_at
+FROM ranked
+WHERE name_rank = 1;
 
 CREATE TABLE IF NOT EXISTS hypotheses (
     id TEXT PRIMARY KEY,

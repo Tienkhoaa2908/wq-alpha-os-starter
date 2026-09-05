@@ -61,6 +61,7 @@ lessons_confirmed:
   - "Cac bien the cung mot tin hieu co tuong quan cao; can doi truong hoac co che"
   - "13/14 lan mo phong hoan tat; mot lan loi can duoc giu lam nhat ky"
 known_defects:
+  - "DA_GIAI_QUYET: so 127 da duoc tach thanh 66 BRAIN active; 61 SPECS chi la typed registry va khong con duoc cong vao catalog count"
   - "Chua co hypothesis card moi tu luong tac tu Gemini"
   - "Chua co alpha duoc promoted"
   - "Kiem tra tuong quan tu than cua alpha tot nhat dang pending"

@@ -5,7 +5,7 @@ File nay la diem doc dau tien cho cac phien lam viec sau. Muc tieu la tiet kiem 
 ## Snapshot trang thai
 
 - Ban snapshot may-doc duoc nam tai `docs/TRANG_THAI_HIEN_TAI.md`.
-- Snapshot hien tai: 16 dataset, 7642 truong, 127 toan tu, 14 ung vien, 14 lan mo phong (13 hoan tat, 1 loi), 0 promoted.
+- Snapshot hien tai: 16 dataset, 7642 truong, 66 toan tu BRAIN active duy nhat, 14 ung vien, 14 lan mo phong (13 hoan tat, 1 loi), 0 promoted. Bang lich su con 127 dong vi co 61 dong typed registry cu; khong dung con so vat ly nay lam active count.
 - Alpha tot nhat hien tai co Sharpe 1.43, Fitness 0.98, turnover 0.028 va self-correlation 0.9415; chua dat nguong de promoted.
 - Moi tac nhan phai doc snapshot sau file nay truoc khi xem SQLite hoac bat dau viec moi.
 

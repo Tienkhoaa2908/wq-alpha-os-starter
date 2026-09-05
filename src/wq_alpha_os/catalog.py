@@ -11,7 +11,7 @@ from .db import json_dumps, session, utc_now
 from .dsl.fingerprint import fingerprint
 from .dsl.nodes import node_count, node_depth
 from .dsl.parser import ParseError, parse
-from .dsl.specs import SPECS
+from .operator_registry import deduplicate_brain_operators
 
 
 THEMES: tuple[tuple[str, tuple[str, ...], str], ...] = (
@@ -52,22 +52,6 @@ def _snapshot(connection: sqlite3.Connection, source: str, region: str, universe
     return snapshot_id
 
 
-def install_builtin_operators(connection: sqlite3.Connection, snapshot_id: str) -> int:
-    count = 0
-    for name, item in SPECS.items():
-        maximum = "n" if item.maximum_args == 99 else item.maximum_args
-        signature = f"{name}({item.minimum_args}..{maximum})"
-        payload = {"name": name, "source": "typed_registry", "kwargs": sorted(item.allowed_kwargs)}
-        connection.execute(
-            """INSERT INTO operators(operator_key,name,category,signature,description,raw_json,snapshot_id,updated_at)
-               VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(operator_key) DO UPDATE SET
-               signature=excluded.signature,raw_json=excluded.raw_json,snapshot_id=excluded.snapshot_id,updated_at=excluded.updated_at""",
-            (_hash("builtin", name), name, "typed_registry", signature, "", json_dumps(payload), snapshot_id, utc_now()),
-        )
-        count += 1
-    return count
-
-
 def import_legacy(source: Path, target: Path | None = None) -> dict[str, int]:
     if not source.exists():
         raise FileNotFoundError(source)
@@ -105,7 +89,6 @@ def import_legacy(source: Path, target: Path | None = None) -> dict[str, int]:
                      json_dumps(data), snapshot_id, utc_now()),
                 )
                 counts["fields"] += 1
-            counts["operators"] += install_builtin_operators(connection, snapshot_id)
             seen: set[str] = set()
             for row in old.execute("SELECT * FROM operators ORDER BY length(coalesce(description,'')) DESC"):
                 data = dict(row)
@@ -115,7 +98,7 @@ def import_legacy(source: Path, target: Path | None = None) -> dict[str, int]:
                 seen.add(name)
                 connection.execute(
                     """INSERT OR IGNORE INTO operators VALUES(?,?,?,?,?,?,?,?)""",
-                    (_hash("legacy", name), name, data.get("category"), data.get("signature"), data.get("description"),
+                    (_hash("legacy", snapshot_id, name), name, data.get("category"), data.get("signature"), data.get("description"),
                      json_dumps(data), snapshot_id, utc_now()),
                 )
                 counts["operators"] += 1
@@ -191,10 +174,6 @@ def import_brain_snapshot(raw_dir: Path, target: Path | None, region: str,
     operators_payload = json.loads(required["operators"].read_text(encoding="utf-8"))
     counts = {"datasets": 0, "fields": 0, "operators": 0}
     with session(target) as connection:
-        legacy_snapshots = "SELECT id FROM catalog_snapshots WHERE source LIKE 'legacy:%'"
-        connection.execute(f"DELETE FROM fields WHERE snapshot_id IN ({legacy_snapshots})")
-        connection.execute(f"DELETE FROM datasets WHERE snapshot_id IN ({legacy_snapshots})")
-        connection.execute(f"DELETE FROM operators WHERE snapshot_id IN ({legacy_snapshots})")
         snapshot_id = _snapshot(connection, "brain_api", region, universe, delay, str(raw_dir))
         for data in _items(datasets_payload):
             dataset_id = str(data.get("id") or data.get("datasetId") or "")
@@ -223,16 +202,14 @@ def import_brain_snapshot(raw_dir: Path, target: Path | None, region: str,
                  direction, json_dumps(data), snapshot_id, utc_now()),
             )
             counts["fields"] += 1
-        counts["operators"] += install_builtin_operators(connection, snapshot_id)
-        for data in _items(operators_payload):
-            name = str(data.get("name") or "").strip().lower()
-            if name:
-                connection.execute(
-                    "INSERT OR REPLACE INTO operators VALUES(?,?,?,?,?,?,?,?)",
-                    (_hash("brain", name), name, data.get("category"), data.get("definition") or data.get("signature"),
-                     data.get("description"), json_dumps(data), snapshot_id, utc_now()),
-                )
-                counts["operators"] += 1
+        for data in deduplicate_brain_operators(_items(operators_payload)):
+            name = data["name"]
+            connection.execute(
+                "INSERT INTO operators VALUES(?,?,?,?,?,?,?,?)",
+                (_hash("brain", snapshot_id, name), name, data["category"], data["definition"],
+                 data["description"], json_dumps(data), snapshot_id, utc_now()),
+            )
+            counts["operators"] += 1
     return counts
 
 

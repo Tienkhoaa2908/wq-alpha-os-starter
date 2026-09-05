@@ -15,6 +15,7 @@ from typing import Any
 
 from ..config import PROJECT_ROOT, simulation_settings
 from ..operator_registry import active_brain_operator_count
+from .recordsets import annual_sharpes
 
 
 LEGACY_STATUS = "legacy_unverified"
@@ -39,25 +40,7 @@ def _annual_summary(raw: str | None) -> dict[str, Any]:
         payload = json.loads(raw)
     except (TypeError, ValueError):
         return {"years": 0, "positive_sharpe_years": 0, "min_sharpe": None}
-    rows: list[dict[str, Any]] = []
-    if isinstance(payload, list):
-        rows = [item for item in payload if isinstance(item, dict)]
-    elif isinstance(payload, dict):
-        raw_rows = payload.get("value") or payload.get("records") or payload.get("results") or payload.get("data")
-        if isinstance(raw_rows, list):
-            for item in raw_rows:
-                if isinstance(item, dict) and isinstance(item.get("value"), dict):
-                    rows.append(item["value"])
-                elif isinstance(item, dict):
-                    rows.append(item)
-    values: list[float] = []
-    for row in rows:
-        if str(row.get("stage") or "IS").upper() != "IS":
-            continue
-        try:
-            values.append(float(row.get("sharpe")))
-        except (TypeError, ValueError):
-            pass
+    values = annual_sharpes(payload)
     return {
         "years": len(values),
         "positive_sharpe_years": sum(value > 0 for value in values),

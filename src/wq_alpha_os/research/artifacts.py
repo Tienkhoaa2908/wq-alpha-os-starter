@@ -23,8 +23,16 @@ class IngestResult:
 
 
 def _existing_fingerprints(connection: sqlite3.Connection) -> list[tuple[str, Fingerprint]]:
+    """Return fingerprints that are allowed to influence v2 duplicate gates.
+
+    ``legacy_unverified`` rows are provenance-only output from the old Gemini
+    bulk generator.  They are intentionally quarantined everywhere else in v2
+    and therefore must not silently block new candidates here either.
+    """
     rows = connection.execute(
-        "SELECT id,canonical_expression,exact_hash,structural_hash,field_names_json,operator_names_json FROM alpha_artifacts"
+        """SELECT id,canonical_expression,exact_hash,structural_hash,field_names_json,operator_names_json
+           FROM alpha_artifacts
+           WHERE status <> 'legacy_unverified'"""
     ).fetchall()
     result = []
     for row in rows:

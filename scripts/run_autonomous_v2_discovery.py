@@ -39,7 +39,7 @@ def main() -> int:
         initialize()
         with session() as connection:
             result = materialize_autonomous_breadth(connection, count=args.count)
-    except Exception as exc:  # runner must persist sanitized failure state
+    except Exception as exc:
         payload = {
             "generated_at": datetime.now(UTC).isoformat(),
             "status": "failed",
@@ -62,9 +62,11 @@ def main() -> int:
         "network_calls": 0,
         "brain_simulations_sent": 0,
         "accepted": len(result.get("accepted", [])),
+        "retired_unsimulated_previous_batch": result.get("retired_unsimulated_previous_batch", 0),
         "pool_size": result.get("pool_size"),
         "theme_count": result.get("theme_count"),
         "dataset_count": result.get("dataset_count"),
+        "template_count": result.get("template_count"),
         "ready_for_simulation_review": bool(result.get("ready_for_simulation_review")),
         "audit_path": str(AUDIT_PATH.relative_to(PROJECT_ROOT)),
     }

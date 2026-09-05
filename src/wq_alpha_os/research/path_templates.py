@@ -185,7 +185,23 @@ def _matches(profile: FieldProfile, template: PathTemplate) -> bool:
         return False
     theme_ok = not template.preferred_themes or profile.economic_theme in template.preferred_themes
     form_ok = not template.preferred_forms or profile.semantic_form in template.preferred_forms
-    return theme_ok or form_ok
+    return theme_ok and form_ok
+
+
+def _pair_compatible(profiles: list[FieldProfile], template: PathTemplate) -> bool:
+    if len(profiles) < 2:
+        return True
+    first, second = profiles[:2]
+    if template.id == "relative_ratio":
+        units_match = first.unit_family == second.unit_family and first.unit_family != "unknown"
+        explicit_ratio = first.semantic_form == second.semantic_form == "ratio"
+        return units_match or explicit_ratio
+    if template.id in {"orthogonal_confirmation", "state_gated_core"}:
+        return (
+            first.economic_theme != second.economic_theme
+            or first.semantic_form != second.semantic_form
+        )
+    return True
 
 
 def eligible_templates(profiles: Iterable[FieldProfile], *, include_experimental: bool = False) -> list[PathTemplate]:
@@ -198,9 +214,8 @@ def eligible_templates(profiles: Iterable[FieldProfile], *, include_experimental
             continue
         if not template.min_fields <= len(items) <= template.max_fields:
             continue
-        if all(profile.data_type in template.input_kinds for profile in items):
-            if any(_matches(profile, template) for profile in items) or not template.preferred_themes:
-                result.append(template)
+        if all(_matches(profile, template) for profile in items) and _pair_compatible(items, template):
+            result.append(template)
     return result
 
 

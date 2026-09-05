@@ -16,13 +16,10 @@ from ..db import json_dumps, utc_now
 from ..providers import CompletionProvider, provider_for
 from .agentic_v2 import _gemini_settings, _parse_object, _write_exchange
 from .field_profiles import HORIZONS
+from .taxonomy import ECONOMIC_THEMES
 
 
-THEMES = {
-    "value", "profitability", "quality", "analyst_revision", "earnings_surprise", "growth", "leverage",
-    "risk_volatility", "options", "sentiment_news", "short_interest", "insider", "relationship", "price",
-    "volume_liquidity", "model_score", "generic",
-}
+THEMES = ECONOMIC_THEMES
 FORMS = {
     "level", "ratio", "count", "forecast", "dispersion", "probability", "flow", "return", "volume", "price",
     "event", "score", "vector_count", "vector_score", "vector_event",
@@ -52,8 +49,10 @@ def _rows(connection: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
                   fp.update_cadence,fp.signedness,fp.unit_family,fp.direction_prior,fp.confidence,
                   f.description,f.coverage
            FROM field_profiles fp JOIN fields f ON f.field_key=fp.field_key
-           WHERE fp.classification_source='deterministic_v2'
-             AND (fp.economic_theme='generic' OR fp.unit_family='unknown' OR fp.confidence<0.70)
+           WHERE fp.classification_source='deterministic_v3'
+             AND upper(fp.data_type) IN ('MATRIX','VECTOR')
+             AND coalesce(f.coverage,0)>=70
+             AND (fp.economic_theme='generic' OR fp.confidence<0.70)
            ORDER BY coalesce(f.coverage,0) DESC,fp.confidence ASC,fp.name LIMIT ?""",
         (max(1, int(limit)),),
     ).fetchall()

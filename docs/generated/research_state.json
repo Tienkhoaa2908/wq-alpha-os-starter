@@ -1,8 +1,8 @@
 {
   "snapshot": {
-    "generated_at": "2026-09-05T15:36:42.641759+00:00",
+    "generated_at": "2026-09-05T15:59:52.974484+00:00",
     "git_branch": "alpha-research-v2",
-    "git_commit": "2df62e768dc83aea90c005a83f6c482d794b3e15",
+    "git_commit": "248485a5def3c1d08b4f08797d92d2e024936c6d",
     "source": "local SQLite sanitized snapshot"
   },
   "configuration": {
@@ -72,9 +72,9 @@
       "family": "value_cashflow_multihorizon",
       "completed_runs": 8,
       "best_reward": -0.132104,
-      "effective_trial_count": 0,
+      "effective_trial_count": 8,
       "semantic_branches": 0,
-      "parameter_only_trials": 0,
+      "parameter_only_trials": 7,
       "stopped": 0,
       "stop_reason": null
     },
@@ -82,7 +82,7 @@
       "family": "analyst_revision_acceleration",
       "completed_runs": 1,
       "best_reward": -2.538528,
-      "effective_trial_count": 0,
+      "effective_trial_count": 1,
       "semantic_branches": 0,
       "parameter_only_trials": 0,
       "stopped": 0,
@@ -92,7 +92,7 @@
       "family": "low_idiosyncratic_risk",
       "completed_runs": 1,
       "best_reward": -3.741152,
-      "effective_trial_count": 0,
+      "effective_trial_count": 1,
       "semantic_branches": 0,
       "parameter_only_trials": 0,
       "stopped": 0,
@@ -102,7 +102,7 @@
       "family": "quality_profitability_persistence",
       "completed_runs": 1,
       "best_reward": -4.25,
-      "effective_trial_count": 0,
+      "effective_trial_count": 1,
       "semantic_branches": 0,
       "parameter_only_trials": 0,
       "stopped": 0,
@@ -112,7 +112,7 @@
       "family": "revision_quality_confirmation",
       "completed_runs": 1,
       "best_reward": -1.837936,
-      "effective_trial_count": 0,
+      "effective_trial_count": 1,
       "semantic_branches": 0,
       "parameter_only_trials": 0,
       "stopped": 0,
@@ -122,8 +122,8 @@
       "family": "value_revision_confirmation",
       "completed_runs": 1,
       "best_reward": -1.529096,
-      "effective_trial_count": 0,
-      "semantic_branches": 0,
+      "effective_trial_count": 1,
+      "semantic_branches": 1,
       "parameter_only_trials": 0,
       "stopped": 0,
       "stop_reason": null
@@ -135,6 +135,6 @@
       "docs/TRANG_THAI_HIEN_TAI.md",
       "docs/generated/research_state.json"
     ],
-    "next_gate": "audit field semantics and v2 agent packet before spending new BRAIN simulations"
+    "next_gate": "review calibrated v3 field and packet audits before Gemini or new BRAIN simulations"
   }
 }

@@ -17,9 +17,9 @@ class AuditSnapshotV2Tests(unittest.TestCase):
         for key, name, dataset, data_type, coverage, theme, form, cadence, signedness, unit, confidence in rows:
             self.connection.execute(
                 """INSERT INTO fields(
-                    field_key,name,dataset_name,data_type,coverage,raw_json,updated_at
-                ) VALUES(?,?,?,?,?,?,?)""",
-                (key, name, dataset, data_type, coverage, "{}", "2026-09-05T00:00:00+00:00"),
+                    field_key,name,dataset_name,description,data_type,coverage,raw_json,updated_at
+                ) VALUES(?,?,?,?,?,?,?,?)""",
+                (key, name, dataset, f"Description for {name}", data_type, coverage, "{}", "2026-09-05T00:00:00+00:00"),
             )
             self.connection.execute(
                 """INSERT INTO field_profiles(
@@ -51,6 +51,8 @@ class AuditSnapshotV2Tests(unittest.TestCase):
         self.assertFalse(audit["audit"]["contains_formula_surface"])
         self.assertEqual(audit["audit"]["forbidden_formula_keys"], [])
         self.assertGreaterEqual(audit["audit"]["candidate_field_count"], 1)
+        self.assertTrue(audit["audit"]["gate_pass"])
+        self.assertEqual(audit["audit"]["missing_description_count"], 0)
 
 
 if __name__ == "__main__":

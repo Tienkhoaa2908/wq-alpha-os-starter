@@ -74,7 +74,7 @@ class KnowledgeTests(unittest.TestCase):
     def test_cards_prioritize_unexplored_themes_and_do_not_expose_expressions(self):
         cards = hypothesis_cards(self.connection, limit=3)
         self.assertEqual(cards[0]["novelty"], "chủ đề mới")
-        self.assertTrue({"sentiment", "options"}.intersection({card["theme"] for card in cards}))
+        self.assertTrue({"sentiment_news", "options"}.intersection({card["theme"] for card in cards}))
         self.assertNotIn("expression", cards[0])
 
     def test_context_is_json_serializable_and_obeys_normal_budget(self):

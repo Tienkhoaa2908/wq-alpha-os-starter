@@ -15,7 +15,7 @@ from pathlib import Path
 import sqlite3
 from typing import Any
 
-from ..config import PROJECT_ROOT
+from ..config import PROJECT_ROOT, load_defaults
 from .discovery_v2 import build_discovery_context
 
 
@@ -65,13 +65,66 @@ def _review_candidates(connection: sqlite3.Connection, limit: int = 48) -> list[
     rows = connection.execute(
         """SELECT fp.name,fp.dataset_name,fp.data_type,fp.economic_theme,fp.semantic_form,
                   fp.update_cadence,fp.unit_family,fp.direction_prior,fp.confidence,
-                  f.coverage,f.date_coverage,f.alpha_count
+                  f.description,f.coverage,f.date_coverage,f.alpha_count
            FROM field_profiles fp JOIN fields f ON f.field_key=fp.field_key
-           WHERE fp.economic_theme='generic' OR fp.unit_family='unknown' OR fp.confidence<?
+           WHERE upper(fp.data_type) IN ('MATRIX','VECTOR')
+             AND coalesce(f.coverage,0)>=70
+             AND (fp.economic_theme='generic' OR fp.confidence<?)
            ORDER BY coalesce(f.coverage,0) DESC,fp.confidence ASC,fp.name LIMIT ?""",
         (LOW_CONFIDENCE, int(limit)),
     ).fetchall()
-    return [dict(row) for row in rows]
+    result = []
+    for row in rows:
+        item = dict(row)
+        item["description"] = _short_description(item.get("description"))
+        result.append(item)
+    return result
+
+
+def _short_description(value: Any, limit: int = 220) -> str | None:
+    text = " ".join(str(value or "").split())
+    if not text:
+        return None
+    return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
+
+
+def _misclassification_risk_samples(connection: sqlite3.Connection, per_dataset: int = 3) -> list[dict[str, Any]]:
+    rows = connection.execute(
+        """SELECT fp.name,fp.dataset_name,fp.data_type,fp.economic_theme,fp.semantic_form,
+                  fp.secondary_themes_json,fp.classification_source,fp.confidence,
+                  f.description,f.coverage
+           FROM field_profiles fp JOIN fields f ON f.field_key=fp.field_key
+           WHERE upper(fp.data_type) IN ('MATRIX','VECTOR')
+             AND (fp.economic_theme='generic' OR fp.confidence<0.70 OR fp.secondary_themes_json NOT IN ('[]',''))
+           ORDER BY fp.dataset_name,fp.confidence ASC,coalesce(f.coverage,0) DESC,fp.name"""
+    ).fetchall()
+    counts: Counter[str] = Counter()
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        dataset = str(row["dataset_name"] or "unknown")
+        if counts[dataset] >= per_dataset:
+            continue
+        secondary = json.loads(row["secondary_themes_json"] or "[]")
+        reasons = []
+        if row["economic_theme"] == "generic":
+            reasons.append("generic_theme")
+        if float(row["confidence"] or 0) < LOW_CONFIDENCE:
+            reasons.append("low_confidence")
+        if secondary:
+            reasons.append("competing_theme_evidence")
+        result.append({
+            "name": row["name"],
+            "dataset_name": dataset,
+            "data_type": row["data_type"],
+            "description": _short_description(row["description"]),
+            "economic_theme": row["economic_theme"],
+            "secondary_themes": secondary,
+            "semantic_form": row["semantic_form"],
+            "confidence": row["confidence"],
+            "risk_reasons": reasons,
+        })
+        counts[dataset] += 1
+    return result
 
 
 def _dataset_summary(connection: sqlite3.Connection) -> list[dict[str, Any]]:
@@ -116,9 +169,10 @@ def build_field_semantic_audit(connection: sqlite3.Connection) -> dict[str, Any]
         "distributions": distributions,
         "theme_form_pairs": _theme_form_pairs(connection),
         "dataset_summary": _dataset_summary(connection),
+        "misclassification_risk_samples": _misclassification_risk_samples(connection),
         "review_candidates": _review_candidates(connection),
         "notes": [
-            "Descriptions are intentionally omitted from the source-controlled audit.",
+            "Descriptions are truncated to 220 characters in review and misclassification-risk samples.",
             "Generic/unknown/low-confidence counts are calibration signals, not automatic rejection criteria.",
             "LLM review should be limited to ambiguous high-value fields after this deterministic audit is inspected.",
         ],
@@ -143,17 +197,70 @@ def _forbidden_packet_keys(value: Any) -> list[str]:
 
 def build_agent_packet_audit(connection: sqlite3.Connection, count: int = 6) -> dict[str, Any]:
     packet = build_discovery_context(connection, count=count)
-    themes = Counter(str(item.get("theme") or "unknown") for item in packet.get("candidate_fields", []))
-    datasets = Counter(str(item.get("dataset") or "unknown") for item in packet.get("candidate_fields", []))
+    candidates = packet.get("candidate_fields", [])
+    themes = Counter(str(item.get("theme") or "unknown") for item in candidates)
+    datasets = Counter(str(item.get("dataset") or "unknown") for item in candidates)
+    total = len(candidates)
+    infrastructure = sum(str(item.get("data_type") or "").upper() not in {"MATRIX", "VECTOR"} for item in candidates)
+    generic = sum(str(item.get("theme") or "generic") == "generic" for item in candidates)
+    low_confidence = sum(float(item.get("profile_confidence") or 0) < LOW_CONFIDENCE for item in candidates)
+    missing_description = sum(not str(item.get("description") or "").strip() for item in candidates)
+    max_dataset_share = round(max(datasets.values(), default=0) / total, 6) if total else 0.0
+    max_theme_share = round(max(themes.values(), default=0) / total, 6) if total else 0.0
+    min_coverage = float(load_defaults().get("research", {}).get("min_field_coverage", 70))
+    eligible = connection.execute(
+        """SELECT count(DISTINCT fp.dataset_name) datasets,count(DISTINCT fp.economic_theme) themes
+           FROM field_profiles fp JOIN fields f ON f.field_key=fp.field_key
+           WHERE upper(fp.data_type) IN ('MATRIX','VECTOR') AND fp.economic_theme!='generic'
+             AND fp.confidence>=? AND coalesce(f.coverage,0)>=?""",
+        (LOW_CONFIDENCE, min_coverage),
+    ).fetchone()
+    eligible_dataset_count = int(eligible["datasets"] or 0)
+    eligible_theme_count = int(eligible["themes"] or 0)
+    forbidden = _forbidden_packet_keys(packet)
+    reasons: list[str] = []
+    if forbidden:
+        reasons.append("formula_surface_present")
+    if infrastructure:
+        reasons.append("infrastructure_field_present")
+    if generic:
+        reasons.append("generic_field_present")
+    if low_confidence:
+        reasons.append("low_confidence_field_present")
+    if missing_description:
+        reasons.append("missing_description")
+    if eligible_dataset_count >= 4 and max_dataset_share > 0.25:
+        reasons.append("dataset_cap_exceeded")
+    if eligible_theme_count >= 4 and max_theme_share > 0.25:
+        reasons.append("theme_cap_exceeded")
+    directives = packet.get("research_directives", {})
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "packet": packet,
         "audit": {
-            "candidate_field_count": len(packet.get("candidate_fields", [])),
+            "candidate_field_count": total,
             "theme_counts": dict(sorted(themes.items())),
             "dataset_counts": dict(sorted(datasets.items())),
-            "forbidden_formula_keys": _forbidden_packet_keys(packet),
-            "contains_formula_surface": bool(_forbidden_packet_keys(packet)),
+            "dataset_count": len(datasets),
+            "theme_count": len(themes),
+            "eligible_dataset_count": eligible_dataset_count,
+            "eligible_theme_count": eligible_theme_count,
+            "dataset_cap": 0.25,
+            "theme_cap": 0.25,
+            "max_dataset_share": max_dataset_share,
+            "max_theme_share": max_theme_share,
+            "low_confidence_count": low_confidence,
+            "generic_count": generic,
+            "infrastructure_count": infrastructure,
+            "missing_description_count": missing_description,
+            "forbidden_formula_keys": forbidden,
+            "contains_formula_surface": bool(forbidden),
+            "cycle_plan": {
+                "diversity_parent_count": len(directives.get("diversity_parents", [])),
+                "refinement_parent_count": len(directives.get("refinement_parents", [])),
+            },
+            "gate_pass": not reasons,
+            "gate_reasons": reasons or ["all_packet_gates_passed"],
         },
     }
 
@@ -179,6 +286,7 @@ def write_audit_snapshots(
         "total_profiles": field_audit["total_profiles"],
         "packet_fields": packet_audit["audit"]["candidate_field_count"],
         "forbidden_formula_keys": packet_audit["audit"]["forbidden_formula_keys"],
+        "gate_pass": packet_audit["audit"]["gate_pass"],
     }
 
 

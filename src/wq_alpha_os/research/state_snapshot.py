@@ -136,7 +136,7 @@ def build_state(connection: sqlite3.Connection) -> dict[str, Any]:
                 "docs/TRANG_THAI_HIEN_TAI.md",
                 "docs/generated/research_state.json",
             ],
-            "next_gate": "audit field semantics and v2 agent packet before spending new BRAIN simulations",
+            "next_gate": "review calibrated v3 field and packet audits before Gemini or new BRAIN simulations",
         },
     }
 
@@ -196,7 +196,7 @@ def _markdown(state: dict[str, Any]) -> str:
         "",
         "## Cổng tiếp theo",
         "",
-        "Audit chất lượng phân loại field và packet tác tử v2 trước khi tiêu thêm lượt mô phỏng BRAIN.",
+        "Đọc hai audit hiệu chuẩn v3; chỉ đi tiếp khi packet gate đạt và mẫu rủi ro phân loại field đã được chấp nhận.",
         "",
         "Nguồn chi tiết máy đọc được: `docs/generated/research_state.json`.",
         "",

@@ -1,50 +1,16 @@
 {
-  "generated_at": "2026-09-05T15:36:42.218681+00:00",
+  "generated_at": "2026-09-05T15:59:52.445946+00:00",
   "packet": {
     "version": "semantic-discovery-v2",
     "requested_hypotheses": 6,
     "candidate_fields": [
       {
-        "name": "mdl77_opricemomentumfactor_normalmf60d",
-        "dataset": "Analysts' Factor Model",
+        "name": "composite_factor_score_derivative",
+        "description": "Momentum score based on analyst revisions; intraday variant",
+        "dataset": "Fundamental Scores",
         "data_type": "MATRIX",
-        "theme": "analyst_revision",
-        "form": "flow",
-        "cadence": "medium",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          20,
-          63,
-          126
-        ],
-        "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_oearningmomentumfactor_surp",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "earnings_dispersion",
-        "form": "ratio",
-        "cadence": "slow",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 95.5,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_liquidityriskfactor_monchgsip",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "growth",
-        "form": "ratio",
+        "theme": "model_score",
+        "form": "score",
         "cadence": "slow",
         "direction_prior": "ambiguous",
         "horizon_prior": [
@@ -54,67 +20,54 @@
           756
         ],
         "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
+        "alpha_count": 862,
+        "local_uses": 5,
+        "profile_confidence": 0.93
       },
       {
-        "name": "visibility_ratio",
-        "dataset": "Analysts' Factor Model",
+        "name": "news_vol_stddev",
+        "description": "Z-score of current volume compared to 30-day average volume, using 30-day volume standard deviation",
+        "dataset": "US News Data",
         "data_type": "MATRIX",
-        "theme": "price",
-        "form": "ratio",
-        "cadence": "fast",
+        "theme": "sentiment_news",
+        "form": "dispersion",
+        "cadence": "event",
         "direction_prior": "ambiguous",
         "horizon_prior": [
           5,
           20,
           63
         ],
-        "coverage": 100.0,
+        "coverage": 96.72,
+        "alpha_count": 964,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.96
       },
       {
-        "name": "mdl177_vra_earningsqualitymodule",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "profitability",
-        "form": "score",
-        "cadence": "slow",
+        "name": "nws18_ghc_lna",
+        "description": "Change in analyst recommendation",
+        "dataset": "Ravenpack News Data",
+        "data_type": "VECTOR",
+        "theme": "analyst_revision",
+        "form": "vector_event",
+        "cadence": "event",
         "direction_prior": "ambiguous",
         "horizon_prior": [
-          126,
-          252,
-          504,
-          756
+          5,
+          20,
+          63
         ],
-        "coverage": 100.0,
+        "coverage": 90.3,
+        "alpha_count": 1648,
         "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_liquidityriskfactor_idb",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "quality",
-        "form": "score",
-        "cadence": "slow",
-        "direction_prior": "negative",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 86.16,
-        "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.82
       },
       {
         "name": "pcr_vol_20",
+        "description": "Ratio of put option volume to call option volume for options expiring in 20 days, signaling short-term options flow sentiment",
         "dataset": "Options Analytics",
         "data_type": "MATRIX",
-        "theme": "risk_volatility",
+        "theme": "options",
         "form": "ratio",
         "cadence": "fast",
         "direction_prior": "ambiguous",
@@ -124,85 +77,74 @@
           63
         ],
         "coverage": 98.1,
+        "alpha_count": 444,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.96
       },
       {
-        "name": "mdl77_valueanalystmodelqva_pegy",
-        "dataset": "Analysts' Factor Model",
+        "name": "parkinson_volatility_10",
+        "description": "Historical Parkinson volatility for approximately 10 calendar days",
+        "dataset": "Volatility Data",
         "data_type": "MATRIX",
-        "theme": "value",
-        "form": "ratio",
-        "cadence": "slow",
+        "theme": "risk_volatility",
+        "form": "level",
+        "cadence": "fast",
         "direction_prior": "negative",
         "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_liquidityriskfactor_yoychgda",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "analyst_revision",
-        "form": "score",
-        "cadence": "medium",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
+          5,
           20,
-          63,
-          126
+          63
         ],
-        "coverage": 100.0,
+        "coverage": 98.08,
+        "alpha_count": 2160,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.9
       },
       {
-        "name": "mdl177_earningmomentumfactor_surp",
-        "dataset": "Analysts' Factor Model",
+        "name": "pv13_custretsig_retsig",
+        "description": "Sign of customer return",
+        "dataset": "Relationship Data for Equity",
         "data_type": "MATRIX",
-        "theme": "earnings_dispersion",
-        "form": "forecast",
-        "cadence": "medium",
+        "theme": "relationship",
+        "form": "return",
+        "cadence": "event",
         "direction_prior": "ambiguous",
         "horizon_prior": [
+          5,
           20,
-          63,
-          126
+          63
         ],
-        "coverage": 94.67,
-        "local_uses": 0,
-        "profile_confidence": 0.95
+        "coverage": 92.75999999999999,
+        "alpha_count": 5116,
+        "local_uses": 2,
+        "profile_confidence": 0.82
       },
       {
-        "name": "mdl177_liquidityriskfactor_monchgsip_alt",
-        "dataset": "Analysts' Factor Model",
+        "name": "vwap",
+        "description": "Daily volume weighted average price",
+        "dataset": "Price Volume Data for Equity",
         "data_type": "MATRIX",
-        "theme": "growth",
-        "form": "ratio",
-        "cadence": "slow",
+        "theme": "volume_liquidity",
+        "form": "price",
+        "cadence": "fast",
         "direction_prior": "ambiguous",
         "horizon_prior": [
-          126,
-          252,
-          504,
-          756
+          5,
+          20,
+          63
         ],
         "coverage": 100.0,
+        "alpha_count": 84907,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.9
       },
       {
-        "name": "mdl177_v1_400_visiratio",
+        "name": "mdl77_opricemomentumfactor_skew90drtn",
+        "description": "Skewness of 90-Day Stock Daily Returns: It is defined as the skewness (measure of lack of symmetry) of the distribution of a stock's daily price returns in the last 90 days. Skewness = 3*(Mean-Median])/Standard Deviat...",
         "dataset": "Analysts' Factor Model",
         "data_type": "MATRIX",
         "theme": "price",
-        "form": "ratio",
+        "form": "return",
         "cadence": "fast",
         "direction_prior": "ambiguous",
         "horizon_prior": [
@@ -211,15 +153,17 @@
           63
         ],
         "coverage": 100.0,
+        "alpha_count": 2,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.93
       },
       {
-        "name": "mdl177_2_managementqualityfactor_chgollev",
-        "dataset": "Analysts' Factor Model",
+        "name": "net_profit_adjusted_min_guidance",
+        "description": "The minimum guidance value for adjusted net profit on an annual basis.",
+        "dataset": "Analyst Estimate Data for Equity",
         "data_type": "MATRIX",
         "theme": "profitability",
-        "form": "score",
+        "form": "level",
         "cadence": "slow",
         "direction_prior": "ambiguous",
         "horizon_prior": [
@@ -229,15 +173,37 @@
           756
         ],
         "coverage": 100.0,
+        "alpha_count": 35,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.9
       },
       {
-        "name": "pcr_vol_150",
-        "dataset": "Options Analytics",
+        "name": "deferred_tax_assets_valuation_allowance_value",
+        "description": "Valuation allowance for deferred tax assets.",
+        "dataset": "Report Footnotes",
+        "data_type": "MATRIX",
+        "theme": "value",
+        "form": "level",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 75.94,
+        "alpha_count": 162,
+        "local_uses": 0,
+        "profile_confidence": 0.9
+      },
+      {
+        "name": "beta_last_30_days_spy",
+        "description": "The rolling beta value of the security relative to SPY, calculated via regression over the last 30 calendar days, representing market sensitivity",
+        "dataset": "Systematic Risk Metrics",
         "data_type": "MATRIX",
         "theme": "risk_volatility",
-        "form": "ratio",
+        "form": "level",
         "cadence": "fast",
         "direction_prior": "ambiguous",
         "horizon_prior": [
@@ -245,32 +211,94 @@
           20,
           63
         ],
-        "coverage": 98.1,
-        "local_uses": 0,
-        "profile_confidence": 0.95
+        "coverage": 97.65,
+        "alpha_count": 1804,
+        "local_uses": 5,
+        "profile_confidence": 0.9
       },
       {
-        "name": "previous_day_open_close_change_pct_all",
-        "dataset": "US News Data",
-        "data_type": "VECTOR",
-        "theme": "value",
-        "form": "vector_count",
+        "name": "snt_buzz_ret",
+        "description": "negative return of relative sentiment volume",
+        "dataset": "Sentiment Data for Equity",
+        "data_type": "MATRIX",
+        "theme": "sentiment_news",
+        "form": "count",
         "cadence": "event",
-        "direction_prior": "negative",
+        "direction_prior": "ambiguous",
         "horizon_prior": [
           5,
           20,
           63
         ],
         "coverage": 100.0,
+        "alpha_count": 4379,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.93
       },
       {
-        "name": "mdl77_omomemtumanalystmodel_jdaksr_amq",
+        "name": "snt_social_volume",
+        "description": "Normalized tweet volume",
+        "dataset": "Social Media Data for Equity",
+        "data_type": "MATRIX",
+        "theme": "sentiment_news",
+        "form": "volume",
+        "cadence": "event",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 100.0,
+        "alpha_count": 6693,
+        "local_uses": 0,
+        "profile_confidence": 0.93
+      },
+      {
+        "name": "earnings_certainty_rank_derivative",
+        "description": "Measures the sustainability and certainty of earnings quality",
+        "dataset": "Fundamental Scores",
+        "data_type": "MATRIX",
+        "theme": "quality",
+        "form": "level",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "alpha_count": 1075,
+        "local_uses": 126,
+        "profile_confidence": 0.82
+      },
+      {
+        "name": "nws12_mainz_short_interest",
+        "description": "Total number of shares sold short divided by total number of shares outstanding",
+        "dataset": "US News Data",
+        "data_type": "VECTOR",
+        "theme": "short_interest",
+        "form": "vector_count",
+        "cadence": "event",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 86.32,
+        "alpha_count": 384,
+        "local_uses": 0,
+        "profile_confidence": 0.9
+      },
+      {
+        "name": "quarterly_earnings_surprise_stddev",
+        "description": "Most recent quarterly earnings surprise expressed in standardized units",
         "dataset": "Analysts' Factor Model",
         "data_type": "MATRIX",
-        "theme": "analyst_revision",
+        "theme": "earnings_surprise",
         "form": "dispersion",
         "cadence": "medium",
         "direction_prior": "ambiguous",
@@ -280,32 +308,17 @@
           126
         ],
         "coverage": 100.0,
+        "alpha_count": 27,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.93
       },
       {
-        "name": "mdl177_2_earningmomentumfactor400_surp",
-        "dataset": "Analysts' Factor Model",
+        "name": "max_net_debt_guidance",
+        "description": "The maximum guidance value for Net Debt on an annual basis.",
+        "dataset": "Analyst Estimate Data for Equity",
         "data_type": "MATRIX",
-        "theme": "earnings_dispersion",
-        "form": "forecast",
-        "cadence": "medium",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          20,
-          63,
-          126
-        ],
-        "coverage": 94.67,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl177_2_liquidityriskfactor_monchgsip",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "growth",
-        "form": "ratio",
+        "theme": "leverage",
+        "form": "level",
         "cadence": "slow",
         "direction_prior": "ambiguous",
         "horizon_prior": [
@@ -315,14 +328,35 @@
           756
         ],
         "coverage": 100.0,
+        "alpha_count": 97,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.9
       },
       {
-        "name": "mdl177_fa_nlvolcap",
-        "dataset": "Analysts' Factor Model",
+        "name": "pcr_vol_150",
+        "description": "Ratio of total put options volume to call options volume for options expiring in 150 days, reflecting short-term options flow sentiment",
+        "dataset": "Options Analytics",
         "data_type": "MATRIX",
-        "theme": "price",
+        "theme": "options",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 98.1,
+        "alpha_count": 445,
+        "local_uses": 0,
+        "profile_confidence": 0.96
+      },
+      {
+        "name": "volume",
+        "description": "Daily volume",
+        "dataset": "Price Volume Data for Equity",
+        "data_type": "MATRIX",
+        "theme": "volume_liquidity",
         "form": "volume",
         "cadence": "fast",
         "direction_prior": "ambiguous",
@@ -331,86 +365,18 @@
           20,
           63
         ],
-        "coverage": 98.59,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl177_2_managementqualityfactor_netdebt",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "profitability",
-        "form": "ratio",
-        "cadence": "slow",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
         "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
+        "alpha_count": 437476,
+        "local_uses": 82,
+        "profile_confidence": 0.9
       },
       {
-        "name": "pcr_vol_90",
-        "dataset": "Options Analytics",
-        "data_type": "MATRIX",
-        "theme": "risk_volatility",
-        "form": "ratio",
-        "cadence": "fast",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          5,
-          20,
-          63
-        ],
-        "coverage": 98.1,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_valueanalystmodelqva_alertrank",
-        "dataset": "Analysts' Factor Model",
+        "name": "fn_def_tax_assets_liab_net_a",
+        "description": "Amount, after allocation of valuation allowances and deferred tax liability, of deferred tax asset attributable to deductible differences and carryforwards, without jurisdictional netting.",
+        "dataset": "Report Footnotes",
         "data_type": "MATRIX",
         "theme": "value",
-        "form": "score",
-        "cadence": "slow",
-        "direction_prior": "negative",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_opricemomentumfactor_visiratio",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "analyst_revision",
-        "form": "ratio",
-        "cadence": "medium",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          20,
-          63,
-          126
-        ],
-        "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_2earningmomentumfactor400_surp",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "earnings_dispersion",
-        "form": "ratio",
+        "form": "level",
         "cadence": "slow",
         "direction_prior": "ambiguous",
         "horizon_prior": [
@@ -419,69 +385,37 @@
           504,
           756
         ],
-        "coverage": 92.4,
+        "coverage": 70.58,
+        "alpha_count": 1318,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.85
       },
       {
-        "name": "mdl77_2si_av_amv",
-        "dataset": "Analysts' Factor Model",
+        "name": "implied_volatility_call_20",
+        "description": "Implied volatility of the at-the-money call for the stock with an expiration 20 calendar days from the measurement date",
+        "dataset": "Volatility Data",
         "data_type": "MATRIX",
-        "theme": "growth",
-        "form": "score",
-        "cadence": "slow",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 99.65,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_400_visiratio",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "price",
-        "form": "ratio",
+        "theme": "options",
+        "form": "level",
         "cadence": "fast",
-        "direction_prior": "ambiguous",
+        "direction_prior": "negative",
         "horizon_prior": [
           5,
           20,
           63
         ],
-        "coverage": 97.11999999999999,
+        "coverage": 97.28999999999999,
+        "alpha_count": 3522,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.93
       },
       {
-        "name": "mdl177_vra_qva_earnquality",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "profitability",
-        "form": "score",
-        "cadence": "slow",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "pcr_vol_all",
-        "dataset": "Options Analytics",
+        "name": "beta_last_60_days_spy",
+        "description": "The rolling beta value of the security relative to SPY, calculated via regression over the last 60 calendar days, representing market sensitivity",
+        "dataset": "Systematic Risk Metrics",
         "data_type": "MATRIX",
         "theme": "risk_volatility",
-        "form": "ratio",
+        "form": "level",
         "cadence": "fast",
         "direction_prior": "ambiguous",
         "horizon_prior": [
@@ -489,161 +423,65 @@
           20,
           63
         ],
-        "coverage": 98.1,
-        "local_uses": 0,
-        "profile_confidence": 0.95
+        "coverage": 97.52,
+        "alpha_count": 2428,
+        "local_uses": 5,
+        "profile_confidence": 0.9
       },
       {
-        "name": "mdl77_liquidityriskfactor_nlmktcap",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "value",
-        "form": "score",
-        "cadence": "slow",
-        "direction_prior": "negative",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_2liquidityriskfactor_milliq",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "analyst_revision",
-        "form": "ratio",
-        "cadence": "medium",
-        "direction_prior": "negative",
-        "horizon_prior": [
-          20,
-          63,
-          126
-        ],
-        "coverage": 100.0,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_earningmomentumfactor_surp",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "earnings_dispersion",
-        "form": "ratio",
-        "cadence": "slow",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 92.4,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_2liquidityriskfactor_monchgsip",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "growth",
-        "form": "ratio",
-        "cadence": "slow",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
-        "coverage": 99.31,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "news_vol_stddev",
-        "dataset": "US News Data",
-        "data_type": "MATRIX",
-        "theme": "price",
-        "form": "dispersion",
-        "cadence": "fast",
+        "name": "global_event_novelty_score_2",
+        "description": "A score indicating how novel an event is across all news providers within a 24-hour window.",
+        "dataset": "Ravenpack News Data",
+        "data_type": "VECTOR",
+        "theme": "sentiment_news",
+        "form": "vector_score",
+        "cadence": "event",
         "direction_prior": "ambiguous",
         "horizon_prior": [
           5,
           20,
           63
         ],
-        "coverage": 96.72,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl177_2_managementqualityfactor_roa",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "profitability",
-        "form": "ratio",
-        "cadence": "slow",
-        "direction_prior": "ambiguous",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
         "coverage": 100.0,
+        "alpha_count": 18,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.9
       },
       {
-        "name": "pcr_vol_60",
-        "dataset": "Options Analytics",
+        "name": "snt_buzz_bfl",
+        "description": "Negative relative sentiment volume measure for current day, with missing values filled as 1",
+        "dataset": "Sentiment Data for Equity",
         "data_type": "MATRIX",
-        "theme": "risk_volatility",
-        "form": "ratio",
-        "cadence": "fast",
+        "theme": "sentiment_news",
+        "form": "count",
+        "cadence": "event",
         "direction_prior": "ambiguous",
         "horizon_prior": [
           5,
           20,
           63
         ],
-        "coverage": 98.1,
-        "local_uses": 0,
-        "profile_confidence": 0.95
-      },
-      {
-        "name": "mdl77_valueanalystmodelqva_earnval",
-        "dataset": "Analysts' Factor Model",
-        "data_type": "MATRIX",
-        "theme": "value",
-        "form": "ratio",
-        "cadence": "slow",
-        "direction_prior": "negative",
-        "horizon_prior": [
-          126,
-          252,
-          504,
-          756
-        ],
         "coverage": 100.0,
+        "alpha_count": 7101,
         "local_uses": 0,
-        "profile_confidence": 0.95
+        "profile_confidence": 0.93
       }
     ],
     "represented_themes": [
       "analyst_revision",
-      "earnings_dispersion",
-      "growth",
+      "earnings_surprise",
+      "leverage",
+      "model_score",
+      "options",
       "price",
       "profitability",
       "quality",
+      "relationship",
       "risk_volatility",
-      "value"
+      "sentiment_news",
+      "short_interest",
+      "value",
+      "volume_liquidity"
     ],
     "failure_ledger": [
       {
@@ -1060,8 +898,54 @@
         "targeted_refinement": 3,
         "diversity_or_robustness": 3
       },
-      "diversity_parents": [],
-      "refinement_parents": [],
+      "diversity_parents": [
+        {
+          "artifact_id": "05c774f3-3d3f-4b0b-a3af-12d87648d347",
+          "family": "value_cashflow_multihorizon",
+          "sharpe": 1.43,
+          "fitness": 0.98,
+          "action": "BRANCH_SEMANTIC",
+          "failure_mode": "high_self_correlation",
+          "rationale": "The signal has useful strength but lacks diversity; parameter tweaks are forbidden.",
+          "allowed_change": "field_or_economic_mechanism",
+          "priority": 1.0
+        },
+        {
+          "artifact_id": "29cd7afb-2455-43dc-9421-6da4d16f1736",
+          "family": "value_cashflow_multihorizon",
+          "sharpe": 1.37,
+          "fitness": 0.92,
+          "action": "BRANCH_SEMANTIC",
+          "failure_mode": "high_self_correlation",
+          "rationale": "The signal has useful strength but lacks diversity; parameter tweaks are forbidden.",
+          "allowed_change": "field_or_economic_mechanism",
+          "priority": 1.0
+        },
+        {
+          "artifact_id": "ffe9b742-5039-45f2-b2c8-2fb1a6ab90c0",
+          "family": "value_cashflow_multihorizon",
+          "sharpe": 1.36,
+          "fitness": 0.93,
+          "action": "BRANCH_SEMANTIC",
+          "failure_mode": "high_self_correlation",
+          "rationale": "The signal has useful strength but lacks diversity; parameter tweaks are forbidden.",
+          "allowed_change": "field_or_economic_mechanism",
+          "priority": 1.0
+        }
+      ],
+      "refinement_parents": [
+        {
+          "artifact_id": "86000231-cffc-4d0b-8c93-62255298921f",
+          "family": "analyst_revision_acceleration",
+          "sharpe": -0.12,
+          "fitness": -0.03,
+          "action": "DIRECTION_DIAGNOSTIC",
+          "failure_mode": "negative_sharpe",
+          "rationale": "One sign diagnostic is allowed; if it also fails, stop the mechanism.",
+          "allowed_change": "polarity_only",
+          "priority": 0.9
+        }
+      ],
       "stopped_families": [],
       "existing_family_names": [
         "value_cashflow_multihorizon"
@@ -1076,23 +960,59 @@
     ]
   },
   "audit": {
-    "candidate_field_count": 36,
+    "candidate_field_count": 24,
     "theme_counts": {
-      "analyst_revision": 5,
-      "earnings_dispersion": 5,
-      "growth": 5,
-      "price": 5,
-      "profitability": 5,
+      "analyst_revision": 1,
+      "earnings_surprise": 1,
+      "leverage": 1,
+      "model_score": 1,
+      "options": 3,
+      "price": 1,
+      "profitability": 1,
       "quality": 1,
-      "risk_volatility": 5,
-      "value": 5
+      "relationship": 1,
+      "risk_volatility": 3,
+      "sentiment_news": 5,
+      "short_interest": 1,
+      "value": 2,
+      "volume_liquidity": 2
     },
     "dataset_counts": {
-      "Analysts' Factor Model": 29,
-      "Options Analytics": 5,
-      "US News Data": 2
+      "Analyst Estimate Data for Equity": 2,
+      "Analysts' Factor Model": 2,
+      "Fundamental Scores": 2,
+      "Options Analytics": 2,
+      "Price Volume Data for Equity": 2,
+      "Ravenpack News Data": 2,
+      "Relationship Data for Equity": 1,
+      "Report Footnotes": 2,
+      "Sentiment Data for Equity": 2,
+      "Social Media Data for Equity": 1,
+      "Systematic Risk Metrics": 2,
+      "US News Data": 2,
+      "Volatility Data": 2
     },
+    "dataset_count": 13,
+    "theme_count": 14,
+    "eligible_dataset_count": 13,
+    "eligible_theme_count": 16,
+    "dataset_cap": 0.25,
+    "theme_cap": 0.25,
+    "max_dataset_share": 0.083333,
+    "max_theme_share": 0.208333,
+    "low_confidence_count": 0,
+    "generic_count": 0,
+    "infrastructure_count": 0,
+    "missing_description_count": 0,
     "forbidden_formula_keys": [],
-    "contains_formula_surface": false
+    "contains_formula_surface": false,
+    "cycle_plan": {
+      "diversity_parent_count": 3,
+      "refinement_parent_count": 1
+    },
+    "gate_pass": true,
+    "gate_reasons": [
+      "all_packet_gates_passed"
+    ]
   }
 }

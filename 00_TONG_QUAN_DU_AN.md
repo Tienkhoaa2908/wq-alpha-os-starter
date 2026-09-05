@@ -111,7 +111,7 @@ Các phân biệt bắt buộc:
 - `ts_count_nans` là missingness/coverage feature;
 - `ts_delay` là lag/anchor, không phải change operator.
 
-## Field Profiler
+## Field Profiler v3
 
 Mỗi field được mô tả ít nhất theo:
 
@@ -129,7 +129,13 @@ Mỗi field được mô tả ít nhất theo:
 
 Field semantics quyết định grammar. VECTOR không được đi thẳng vào time-series operator nếu chưa reduce.
 
-Field Profiler chưa được coi là đáng tin chỉ vì đã materialize đủ 7.642 dòng. Trước simulation mới phải đọc `field_semantic_audit.json`, đặc biệt tỷ lệ `generic`, `unknown unit`, low-confidence và các field coverage cao nhưng semantic mơ hồ.
+Field Profiler v3 ưu tiên bằng chứng từ tên và mô tả. Dataset và nhãn semantic cũ chỉ là prior yếu khi không có bằng chứng trực tiếp. Bộ phân loại dùng token/cụm từ thay cho substring rộng, mặc định direction là `ambiguous`, và xét dấu của change/delta/return/revision trước dấu hiệu không âm.
+
+Taxonomy economic theme là một nguồn dùng chung cho profiler, field review, path template và knowledge card. Các kiểu hạ tầng `UNIVERSE`, `GROUP`, `SYMBOL` không được vào discovery hoặc review.
+
+Candidate packet v3 chỉ nhận `MATRIX`/`VECTOR`, loại `generic` và confidence dưới `0.70`, giữ mô tả tối đa 220 ký tự, áp trần 25% cho mỗi dataset và mỗi theme. Với 6 hypothesis, mục tiêu là 24 field và ít nhất 6 dataset khi catalogue cho phép.
+
+Field Profiler chưa được coi là đáng tin chỉ vì đã materialize đủ 7.642 dòng. Trước simulation mới phải đọc `field_semantic_audit.json`, đặc biệt các mẫu có rủi ro phân loại sai và các field coverage cao nhưng semantic mơ hồ. `unknown unit` đứng một mình không phải lý do gửi field đi review.
 
 ## 14 path template
 
@@ -198,6 +204,8 @@ Một research cycle chuẩn có budget 12:
 - 3 targeted refinement;
 - 3 diversity/robustness branch.
 
+Các BRAIN check suy ra trực tiếp từ metric không được che mất chẩn đoán tổng hợp. Trial counter được rebuild từ lịch sử hợp lệ; sensitivity/đổi tham số làm tăng chi phí thử nhưng không được tính là semantic novelty. Cycle plan phải giữ parent tốt nhất trong nhánh diversity khi cần thoát self-correlation cao.
+
 ## Workflow phối hợp ChatGPT ↔ Codex
 
 ChatGPT web dùng GitHub làm nguồn trạng thái chung. Codex trong VS Code có quyền đọc SQLite/evidence cục bộ và sau mỗi task phải đưa phần trạng thái an toàn lên GitHub.
@@ -221,11 +229,9 @@ Không được coi task là xong nếu chưa cập nhật các file điều ph�
 
 Trước khi tiêu simulation mới:
 
-1. xác nhận legacy quarantine: 1.267 legacy không còn trong motif/subtree/empirical memory;
-2. rebuild yearly/annual evidence bằng parser recordset thống nhất;
-3. tạo và đọc `docs/generated/field_semantic_audit.json`;
-4. tạo và đọc `docs/generated/agent_packet_preview.json`;
-5. nếu Field Profiler có tỷ lệ mơ hồ quá cao, sửa deterministic classifier hoặc chỉ review một tập field high-value bằng Gemini;
-6. chỉ khi packet field/theme đủ đa dạng và không có bề mặt công thức mới gọi Gemini tạo 6 hypothesis card;
-7. dry-run AlphaPlan trước;
-8. sau đó mới tiêu batch 12 simulation đầu tiên của v2.
+1. đọc `docs/generated/field_semantic_audit.json` và kiểm tra các mẫu có rủi ro phân loại sai;
+2. đọc `docs/generated/agent_packet_preview.json` và chỉ đi tiếp khi `gate_pass=true`;
+3. kiểm tra packet có 24 field cho 6 hypothesis, đủ độ đa dạng dataset/theme và không có field generic, confidence thấp hoặc kiểu hạ tầng;
+4. chỉ review bằng Gemini một tập field mơ hồ nhưng có giá trị cao nếu thật sự cần;
+5. dry-run AlphaPlan trước;
+6. sau đó mới tiêu batch 12 simulation đầu tiên của v2.

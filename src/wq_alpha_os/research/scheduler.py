@@ -12,6 +12,17 @@ from .recordsets import decode_recordset
 from .scorer import check_summary
 
 
+METRIC_DERIVED_CHECKS = {
+    "LOW_FITNESS",
+    "LOW_SHARPE",
+    "LOW_TURNOVER",
+    "HIGH_TURNOVER",
+    "LOW_SUB_UNIVERSE_SHARPE",
+    "SELF_CORRELATION",
+    "HIGH_SELF_CORRELATION",
+}
+
+
 @dataclass(frozen=True)
 class RunDiagnosis:
     action: str
@@ -66,9 +77,10 @@ def diagnose_run(row: sqlite3.Row | dict[str, Any]) -> RunDiagnosis:
         checks = json.loads(checks_raw or "[]") if isinstance(checks_raw, str) else checks_raw
     except (TypeError, ValueError):
         checks = []
-    _, failed, failures = check_summary(checks)
-    if failed:
-        return RunDiagnosis("DIAGNOSE_CHECK", "brain_check_failed", f"BRAIN hard check failed: {', '.join(failures[:2])}", "change_only_the_failed_constraint", 0.95)
+    _, _, failures = check_summary(checks)
+    structural_failures = [name for name in failures if str(name).upper() not in METRIC_DERIVED_CHECKS]
+    if structural_failures:
+        return RunDiagnosis("DIAGNOSE_CHECK", "brain_check_failed", f"BRAIN hard check failed: {', '.join(structural_failures[:2])}", "change_only_the_failed_constraint", 0.95)
 
     sharpe = _number(get("sharpe"))
     fitness = _number(get("fitness"))
@@ -143,6 +155,56 @@ def mark_family_stopped(connection: sqlite3.Connection, family: str, reason: str
     )
 
 
+def rebuild_family_trial_stats(connection: sqlite3.Connection) -> dict[str, int]:
+    """Rebuild trial burden from research-eligible artifacts without legacy noise."""
+    stopped = {
+        str(row["family"]): (int(row["stopped"]), row["stop_reason"])
+        for row in connection.execute("SELECT family,stopped,stop_reason FROM family_trial_stats")
+    }
+    rows = connection.execute(
+        """SELECT family,
+                  count(*) effective_trial_count,
+                  sum(CASE WHEN parent_id IS NOT NULL AND NOT (
+                        lower(coalesce(mutation,'')) LIKE 'sensitivity:%' OR
+                        lower(coalesce(mutation,'')) LIKE 'ablation:%' OR
+                        lower(coalesce(mutation,'')) LIKE 'diagnostic:%'
+                      ) THEN 1 ELSE 0 END) semantic_branches,
+                  sum(CASE WHEN
+                        lower(coalesce(mutation,'')) LIKE 'sensitivity:%' OR
+                        lower(coalesce(mutation,'')) LIKE 'ablation:%' OR
+                        lower(coalesce(mutation,'')) LIKE 'diagnostic:%'
+                      THEN 1 ELSE 0 END) parameter_only_trials
+           FROM alpha_artifacts
+           WHERE status!='legacy_unverified'
+           GROUP BY family"""
+    ).fetchall()
+    connection.execute("DELETE FROM family_trial_stats")
+    for row in rows:
+        family = str(row["family"])
+        is_stopped, reason = stopped.get(family, (0, None))
+        connection.execute(
+            """INSERT INTO family_trial_stats(
+                family,effective_trial_count,semantic_branches,parameter_only_trials,stopped,stop_reason,updated_at
+            ) VALUES(?,?,?,?,?,?,?)""",
+            (
+                family, int(row["effective_trial_count"]), int(row["semantic_branches"] or 0),
+                int(row["parameter_only_trials"] or 0), is_stopped, reason, utc_now(),
+            ),
+        )
+    materialized = {str(row["family"]) for row in rows}
+    for family, (is_stopped, reason) in stopped.items():
+        if family not in materialized and is_stopped:
+            connection.execute(
+                "INSERT INTO family_trial_stats VALUES(?,?,?,?,?,?,?)",
+                (family, 0, 0, 0, 1, reason, utc_now()),
+            )
+    return {
+        "families": len(rows),
+        "effective_trials": sum(int(row["effective_trial_count"]) for row in rows),
+        "parameter_only_trials": sum(int(row["parameter_only_trials"] or 0) for row in rows),
+    }
+
+
 def controlled_cycle_plan(connection: sqlite3.Connection, budget: int = 12) -> dict[str, Any]:
     """Allocate a 50/25/25 research cycle without calling a model or BRAIN."""
     budget = max(1, int(budget))
@@ -153,9 +215,25 @@ def controlled_cycle_plan(connection: sqlite3.Connection, budget: int = 12) -> d
     rows = connection.execute(
         """SELECT a.id artifact_id,a.family,a.expression,r.*
            FROM alpha_artifacts a JOIN simulation_runs r ON r.artifact_id=a.id
-           WHERE r.platform_status='COMPLETE' ORDER BY r.finished_at DESC"""
+           LEFT JOIN family_trial_stats t ON t.family=a.family
+           WHERE r.platform_status='COMPLETE' AND coalesce(t.stopped,0)=0
+           ORDER BY r.finished_at DESC"""
     ).fetchall()
-    diagnosed = [{"artifact_id": row["artifact_id"], "family": row["family"], **diagnose_run(row).to_dict()} for row in rows]
+    diagnosed = [
+        {
+            "artifact_id": row["artifact_id"], "family": row["family"],
+            "sharpe": row["sharpe"], "fitness": row["fitness"],
+            **diagnose_run(row).to_dict(),
+        }
+        for row in rows
+    ]
+    diagnosed.sort(
+        key=lambda item: (
+            -float(item["priority"]),
+            -float(item["sharpe"] if item["sharpe"] is not None else -999),
+            -float(item["fitness"] if item["fitness"] is not None else -999),
+        )
+    )
     refinement = [item for item in diagnosed if item["action"] in {"REFINE_ONE_DIMENSION", "TURNOVER_INTERVENTION", "DIRECTION_DIAGNOSTIC"}][:refine]
     diversity_items = [item for item in diagnosed if item["action"] in {"BRANCH_SEMANTIC", "ROBUSTNESS_BRANCH"}][:diversity]
     stopped = [item for item in diagnosed if item["action"] == "STOP"]
@@ -183,4 +261,5 @@ __all__ = [
     "diagnose_run",
     "mark_family_stopped",
     "mutation_hint",
+    "rebuild_family_trial_stats",
 ]

@@ -14,6 +14,7 @@ import sqlite3
 from typing import Any, Iterable
 
 from ..db import json_dumps, utc_now
+from .taxonomy import normalize_theme
 
 
 @dataclass(frozen=True)
@@ -47,32 +48,32 @@ class FieldProfile:
 
 
 THEME_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("value", ("value", "cash flow", "cashflow", "cfp", "book to", "earnings yield", "price to", "yield")),
+    ("sentiment_news", ("sentiment", "news", "headline", "social", "buzz", "ravenpack", "novelty")),
+    ("options", ("option", "implied volatility", "put call", "put/call", "pcr", "skew")),
+    ("earnings_surprise", ("earnings surprise", "unexpected earnings", "surprise", "estimate dispersion")),
+    ("analyst_revision", ("estimate revision", "earnings revision", "analyst revision", "recommendation", "target price", "consensus estimate", "forecast revision")),
+    ("volume_liquidity", ("volume", "turnover", "liquidity", "illiquidity", "liquidityriskfactor", "vwap", "bid ask spread", "trading activity")),
+    ("risk_volatility", ("volatility", "stddev", "standard deviation", "variance", "beta", "drawdown", "idiosyncratic risk", "liquidity risk", "true range", "atr")),
+    ("price", ("price momentum", "opricemomentumfactor", "momentum", "price change", "open close", "close open", "stock return", "market return", "benchmark performance")),
+    ("value", ("valuation", "value factor", "cash flow to price", "cash flow yield", "cashflow yield", "cfp", "book to price", "earnings yield", "price to earnings", "price earnings", "pe ratio")),
     ("profitability", ("profit", "margin", "roa", "roe", "return on asset", "return on equity")),
     ("quality", ("quality", "accrual", "balance sheet", "earnings quality")),
-    ("analyst_revision", ("revision", "analyst", "estimate", "recommendation", "target price", "consensus")),
-    ("earnings_surprise", ("surprise", "unexpected earnings", "earnings surprise")),
-    ("growth", ("growth", "cagr", "yoy", "year over year")),
-    ("leverage", ("leverage", "debt", "liabilit", "interest coverage")),
-    ("risk_volatility", ("volatility", "vol", "beta", "drawdown", "risk", "variance")),
-    ("options", ("option", "implied volatility", "put call", "put/call", "skew")),
-    ("sentiment_news", ("sentiment", "news", "headline", "social", "buzz", "ravenpack")),
+    ("growth", ("growth", "cagr", "year over year", "yoy change")),
+    ("leverage", ("leverage", "net debt", "debt ratio", "liability", "interest coverage")),
     ("short_interest", ("short interest", "short ratio", "days to cover")),
     ("insider", ("insider", "director", "officer transaction")),
     ("relationship", ("relationship", "supplier", "customer", "network", "peer link")),
-    ("price", ("close", "open", "high", "low", "price", "return")),
-    ("volume_liquidity", ("volume", "turnover", "liquidity", "vwap", "spread")),
-    ("model_score", ("model", "factor", "score", "signal")),
+    ("model_score", ("model score", "factor score", "composite score", "signal score")),
 )
 
 FORM_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ratio", ("ratio", "yield", "margin", "per share", "to price", "price to", "cfp", "roe", "roa")),
     ("count", ("count", "number of", "num ", "frequency", "buzz")),
     ("forecast", ("forecast", "estimate", "consensus", "target price", "expected")),
-    ("dispersion", ("dispersion", "std", "standard deviation", "variance", "uncertainty")),
+    ("dispersion", ("dispersion", "std", "stddev", "standard deviation", "variance", "uncertainty")),
     ("probability", ("probability", "likelihood", "chance")),
     ("flow", ("flow", "cash flow", "cashflow", "inflow", "outflow")),
-    ("return", ("return", "ret ", "returns")),
+    ("return", ("return", "returns", "change", "delta", "momentum", "opricemomentumfactor", "performance")),
     ("volume", ("volume", "shares traded", "turnover")),
     ("price", ("price", "close", "open", "high", "low", "vwap")),
     ("event", ("event", "announcement", "filing", "transaction", "news")),
@@ -88,42 +89,71 @@ HORIZONS: dict[str, tuple[int, ...]] = {
 
 
 def _text(*parts: object) -> str:
-    return " ".join(str(part or "") for part in parts).lower().replace("_", " ")
+    raw = " ".join(str(part or "") for part in parts).lower().replace("_", " ")
+    return " ".join(re.findall(r"[a-z0-9]+", raw))
 
 
-def _theme(text: str, existing: str) -> tuple[str, tuple[str, ...], float]:
+def _has_phrase(text: str, phrase: str) -> bool:
+    normalized = _text(phrase)
+    return bool(normalized and re.search(rf"(?:^| )({re.escape(normalized)})(?: |$)", text))
+
+
+def _hits(text: str, needles: tuple[str, ...]) -> bool:
+    return any(_has_phrase(text, needle) for needle in needles)
+
+
+def _theme_hits(text: str) -> list[str]:
     hits: list[str] = []
     for theme, needles in THEME_KEYWORDS:
-        if any(needle in text for needle in needles):
+        if _hits(text, needles):
             hits.append(theme)
-    normalized_existing = (existing or "").strip().lower()
-    legacy_map = {
-        "value_cashflow": "value",
-        "profitability_quality": "profitability",
-        "risk": "risk_volatility",
-        "price_volume": "price",
-        "sentiment": "sentiment_news",
-    }
-    if normalized_existing and normalized_existing not in {"generic", "unknown"}:
-        mapped = legacy_map.get(normalized_existing, normalized_existing)
-        if mapped not in hits:
-            hits.insert(0, mapped)
-    if not hits:
-        return "generic", (), 0.35
-    primary = hits[0]
-    return primary, tuple(hits[1:3]), min(0.95, 0.62 + 0.08 * len(hits))
+    return hits
 
 
-def _form(text: str, data_type: str) -> str:
+def _theme(name_text: str, description_text: str, existing: str) -> tuple[str, tuple[str, ...], float]:
+    name_hits = _theme_hits(name_text)
+    description_hits = [item for item in _theme_hits(description_text) if item not in name_hits]
+    hits = name_hits + description_hits
+    if hits:
+        base = 0.90 if name_hits else 0.82
+        return hits[0], tuple(hits[1:3]), min(0.96, base + 0.03 * (len(hits) - 1))
+    legacy = normalize_theme(existing)
+    if legacy != "generic":
+        return legacy, (), 0.52
+    return "generic", (), 0.35
+
+
+def _dataset_fallback(dataset_name: str) -> str:
+    text = _text(dataset_name)
+    priors = (
+        ("options", ("options analytics",)),
+        ("risk_volatility", ("volatility data", "systematic risk")),
+        ("sentiment_news", ("news data", "ravenpack", "sentiment data", "social media")),
+        ("relationship", ("relationship data",)),
+        ("price", ("price volume data",)),
+        ("analyst_revision", ("analyst estimate data",)),
+        ("model_score", ("analysts factor model", "fundamental scores")),
+    )
+    return next((theme for theme, names in priors if _hits(text, names)), "generic")
+
+
+def _form(name_text: str, description_text: str, data_type: str) -> str:
     if data_type == "VECTOR":
-        if any(token in text for token in ("count", "volume", "buzz", "number")):
+        if _hits(name_text, ("change", "delta", "return", "momentum", "performance")):
+            return "vector_event"
+        if _hits(name_text, ("count", "volume", "buzz", "number")):
             return "vector_count"
-        if any(token in text for token in ("sentiment", "score", "probability")):
+        if _hits(name_text, ("sentiment", "score", "probability")):
+            return "vector_score"
+        if _hits(description_text, ("count", "volume", "buzz", "number")):
+            return "vector_count"
+        if _hits(description_text, ("sentiment", "score", "probability")):
             return "vector_score"
         return "vector_event"
-    for form, needles in FORM_KEYWORDS:
-        if any(needle in text for needle in needles):
-            return form
+    for text in (name_text, description_text):
+        for form, needles in FORM_KEYWORDS:
+            if _hits(text, needles):
+                return form
     return "level"
 
 
@@ -137,15 +167,11 @@ def _cadence(theme: str, form: str) -> str:
     return "slow"
 
 
-def _direction(existing: str, theme: str) -> tuple[str, str]:
-    value = (existing or "").strip().lower()
-    if value in {"reverse", "negative", "-1"}:
-        return "negative", "medium"
-    if value in {"positive", "+1"}:
+def _direction(text: str) -> tuple[str, str]:
+    if _hits(text, ("earnings yield", "cash flow yield", "return on assets", "return on equity", "profit margin")):
         return "positive", "medium"
-    if theme in {"value", "leverage", "short_interest"}:
-        # Prior only; the system still allows one sign diagnostic.
-        return "negative", "low"
+    if _hits(text, ("price to earnings", "price earnings", "pe ratio", "leverage", "debt ratio", "volatility", "drawdown", "idiosyncratic risk")):
+        return "negative", "medium"
     return "ambiguous", "low"
 
 
@@ -198,12 +224,27 @@ def profile_row(row: sqlite3.Row | dict[str, Any]) -> FieldProfile:
     description = str(get("description", "") or "")
     dataset_name = str(get("dataset_name", "") or "")
     data_type = str(get("data_type", "MATRIX") or "MATRIX").upper()
-    text = _text(name, description, dataset_name)
-    theme, secondary, confidence = _theme(text, str(get("semantic_theme", "") or ""))
-    form = _form(text, data_type)
+    name_text = _text(name)
+    description_text = _text(description)
+    text = _text(name, description)
+    theme, secondary, confidence = _theme(name_text, description_text, str(get("semantic_theme", "") or ""))
+    if theme == "generic":
+        fallback = _dataset_fallback(dataset_name)
+        if fallback != "generic":
+            theme, confidence = fallback, 0.5
+    form = _form(name_text, description_text, data_type)
     cadence = _cadence(theme, form)
-    direction, direction_confidence = _direction(str(get("semantic_direction", "") or ""), theme)
-    signedness = "nonnegative" if any(token in text for token in ("count", "volume", "market cap", "assets", "sales")) else "unknown"
+    direction, direction_confidence = _direction(text)
+    signed_markers = (
+        "change", "delta", "return", "revision", "growth", "momentum", "opricemomentumfactor", "surprise", "spread",
+    )
+    nonnegative_markers = ("count", "volume", "market cap", "assets", "sales", "price")
+    if _hits(text, signed_markers):
+        signedness = "signed"
+    elif _hits(text, nonnegative_markers):
+        signedness = "nonnegative"
+    else:
+        signedness = "unknown"
     sparsity = "event_sparse" if cadence == "event" else ("slow_stepwise" if cadence == "slow" else "dense")
     peer_dependence = "high" if theme in {"value", "profitability", "quality", "growth", "leverage", "analyst_revision"} else "medium"
     preferred, discouraged = _roles(theme, form, cadence)
@@ -225,7 +266,7 @@ def profile_row(row: sqlite3.Row | dict[str, Any]) -> FieldProfile:
         horizon_prior=HORIZONS[cadence],
         preferred_roles=preferred,
         discouraged_roles=discouraged,
-        classification_source="deterministic_v2",
+        classification_source="deterministic_v3",
         confidence=round(confidence, 3),
     )
 

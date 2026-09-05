@@ -2,9 +2,9 @@
 
 > Tệp này được tạo bởi `alpha-os snapshot`. Không chỉnh số liệu thủ công; hãy cập nhật từ SQLite rồi commit/push.
 
-- Thời điểm: `2026-09-05T15:36:42.641759+00:00`
+- Thời điểm: `2026-09-05T15:59:52.974484+00:00`
 - Branch: `alpha-research-v2`
-- Commit: `2df62e768dc83aea90c005a83f6c482d794b3e15`
+- Commit: `248485a5def3c1d08b4f08797d92d2e024936c6d`
 
 ## Danh mục và tri thức
 
@@ -41,6 +41,6 @@ normalize(add(multiply(0.75, hump(reverse(group_rank(ts_rank(mdl177_2_deepvaluef
 
 ## Cổng tiếp theo
 
-Audit chất lượng phân loại field và packet tác tử v2 trước khi tiêu thêm lượt mô phỏng BRAIN.
+Đọc hai audit hiệu chuẩn v3; chỉ đi tiếp khi packet gate đạt và mẫu rủi ro phân loại field đã được chấp nhận.
 
 Nguồn chi tiết máy đọc được: `docs/generated/research_state.json`.

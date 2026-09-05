@@ -11,6 +11,7 @@ from .field_profiles import materialize_field_profiles
 from .motifs import backfill_motifs
 from .operator_kb import active_operator_knowledge, assert_semantic_coverage
 from .path_templates import PATH_TEMPLATES
+from .scheduler import rebuild_family_trial_stats
 
 
 def materialize_operator_profiles(connection: sqlite3.Connection) -> dict[str, Any]:
@@ -67,12 +68,14 @@ def rebuild_all(connection: sqlite3.Connection) -> dict[str, Any]:
     template_result = materialize_path_templates(connection)
     motif_result = backfill_motifs(connection)
     empirical_result = rebuild_motif_stats(connection)
+    trial_result = rebuild_family_trial_stats(connection)
     return {
         "operators": operator_result,
         "fields": field_result,
         "templates": template_result,
         "motifs": motif_result,
         "empirical": empirical_result,
+        "trials": trial_result,
     }
 
 

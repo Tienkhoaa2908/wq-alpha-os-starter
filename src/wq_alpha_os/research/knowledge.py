@@ -22,6 +22,7 @@ from typing import Any, Iterable
 
 from ..config import load_defaults
 from .scorer import check_summary
+from .taxonomy import normalize_theme
 
 
 DISCOVERY_CONTEXT_VERSION = "discovery-v1"
@@ -38,12 +39,12 @@ __all__ = [
 # không phải là công thức alpha, không suy luận hiệu quả và không chọn toán tử
 # cụ thể thay cho bước thiết kế tiếp theo.
 THEME_TEMPLATES: dict[str, dict[str, str]] = {
-    "value_cashflow": {
+    "value": {
         "statement": "Kiểm tra liệu định giá tương đối theo dòng tiền còn mang thông tin dự báo sau khi loại bớt khác biệt nhóm.",
         "mechanism": "Nếu thị trường điều chỉnh chậm với dòng tiền bền vững, doanh nghiệp rẻ tương đối có thể được định giá lại dần.",
         "horizon": "Trung hạn; bắt đầu bằng một khung thời gian, không phối nhiều khung ngay.",
     },
-    "profitability_quality": {
+    "profitability": {
         "statement": "Kiểm tra liệu chất lượng lợi nhuận phân biệt được doanh nghiệp có hiệu quả vận hành bền vững.",
         "mechanism": "Khả năng sinh lời và chất lượng bảng cân đối có thể được phản ánh không đồng đều giữa các doanh nghiệp cùng nhóm.",
         "horizon": "Trung hạn; ưu tiên tín hiệu ổn định hơn là thay đổi giá ngắn hạn.",
@@ -53,7 +54,7 @@ THEME_TEMPLATES: dict[str, dict[str, str]] = {
         "mechanism": "Sự điều chỉnh dự báo có thể dẫn dắt quá trình cập nhật định giá, nhưng dấu phải được kiểm tra bằng thí nghiệm chẩn đoán.",
         "horizon": "Ngắn đến trung hạn; cần kiểm soát vòng quay trước khi ghép nhánh khác.",
     },
-    "earnings_dispersion": {
+    "earnings_surprise": {
         "statement": "Kiểm tra liệu mức phân tán hoặc bất ngờ trong kỳ vọng lợi nhuận phản ánh bất định đang bị định giá thiếu.",
         "mechanism": "Khác biệt quan điểm của thị trường có thể tạo ra lợi nhuận sau khi thông tin mới được giải quyết.",
         "horizon": "Sự kiện đến trung hạn; phải xác định dấu riêng cho từng trường dữ liệu.",
@@ -68,12 +69,12 @@ THEME_TEMPLATES: dict[str, dict[str, str]] = {
         "mechanism": "Khả năng chịu đựng chu kỳ và chi phí vốn khác nhau có thể làm mức đòn bẩy được định giá lại.",
         "horizon": "Trung hạn; hướng âm chỉ là giả định cần được bác bỏ hoặc xác nhận.",
     },
-    "risk": {
+    "risk_volatility": {
         "statement": "Kiểm tra liệu mức rủi ro riêng lẻ hoặc biến động tương đối chứa phần bù rủi ro có thể khai thác.",
         "mechanism": "Rủi ro thực tế, rủi ro được kỳ vọng và nhu cầu phòng hộ có thể tạo ra chênh lệch định giá.",
         "horizon": "Ngắn đến trung hạn; bắt buộc theo dõi vòng quay và độ ổn định theo năm.",
     },
-    "price_volume": {
+    "price": {
         "statement": "Kiểm tra một cơ chế giá hoặc thanh khoản riêng biệt thay vì sao chép động lượng tổng quát.",
         "mechanism": "Dòng lệnh, thanh khoản và quá trình hấp thụ thông tin có thể khác nhau giữa các doanh nghiệp cùng nhóm.",
         "horizon": "Ngắn hạn; chỉ dùng một biến đổi thời gian để đo cơ chế trước.",
@@ -83,7 +84,7 @@ THEME_TEMPLATES: dict[str, dict[str, str]] = {
         "mechanism": "Định giá biến động và nhu cầu phòng hộ có thể truyền thông tin chưa phản ánh hết sang thị trường cơ sở.",
         "horizon": "Ngắn đến trung hạn; không ghép với giá cơ sở trước khi có bằng chứng độc lập.",
     },
-    "sentiment": {
+    "sentiment_news": {
         "statement": "Kiểm tra liệu thông tin hoặc tâm lý mới có độ bền sau khi loại ảnh hưởng theo nhóm.",
         "mechanism": "Thông tin công khai có thể được hấp thụ dần, hoặc phản ứng ban đầu có thể quá mức; dấu cần kiểm tra chẩn đoán.",
         "horizon": "Ngắn hạn; ưu tiên kiểm tra độ suy giảm và kiểm soát vòng quay.",
@@ -404,7 +405,12 @@ def _field_rows(connection: sqlite3.Connection) -> list[dict[str, Any]]:
            ORDER BY coalesce(coverage,0) DESC,coalesce(alpha_count,0) ASC,name""",
         (min_coverage,),
     ).fetchall()
-    return [dict(row) for row in rows]
+    result = []
+    for row in rows:
+        item = dict(row)
+        item["semantic_theme"] = normalize_theme(item.get("semantic_theme"))
+        result.append(item)
+    return result
 
 
 def _field_card(row: dict[str, Any]) -> dict[str, Any]:

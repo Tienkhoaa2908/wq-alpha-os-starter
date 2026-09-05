@@ -124,7 +124,9 @@ class ResearchV2Tests(unittest.TestCase):
 
     def test_high_correlation_routes_to_semantic_branch(self):
         row = {
-            "platform_status": "COMPLETE", "checks_json": "[]", "sharpe": 1.43, "fitness": 0.98,
+            "platform_status": "COMPLETE",
+            "checks_json": '[{"name":"LOW_FITNESS","result":"FAIL"}]',
+            "sharpe": 1.43, "fitness": 0.98,
             "turnover": 0.028, "self_correlation": 0.9415, "annual_json": "[]",
         }
         diagnosis = diagnose_run(row)

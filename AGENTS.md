@@ -7,6 +7,8 @@
 - Khi làm việc với bộ sinh alpha v2, đọc thêm:
   - `docs/generated/field_semantic_audit.json`
   - `docs/generated/agent_packet_preview.json`
+  - `docs/generated/first_v2_run_status.json` nếu đang chạy vòng discovery đầu tiên; file này là trạng thái runtime đã làm sạch và phải được ưu tiên để chẩn đoán lần chạy gần nhất.
+  - `docs/generated/candidate_semantic_review.json` và `docs/generated/first_v2_hypothesis_dry_run.json` khi chúng đã tồn tại.
 - SQLite trong `data/db/` và bằng chứng trong `data/evidence/` là nguồn sự thật thực nghiệm cục bộ; các tệp trạng thái/audit trong `docs/` là bản rút gọn an toàn để đồng bộ qua GitHub.
 - Chỉ mở thêm file liên quan trực tiếp đến nhiệm vụ hiện tại; không audit toàn repo nếu không cần.
 
@@ -18,6 +20,7 @@
 - Không in tài khoản, mật khẩu, mã phiên hay khóa truy cập. Tệp `.env` chỉ nằm trên máy và không được đưa vào Git.
 - `legacy_unverified` là dữ liệu lịch sử từ bộ sinh Gemini cũ. Giữ record để truy vết nhưng tuyệt đối không cho chúng ảnh hưởng novelty, subtree frequency, empirical motif stats, scheduler hay trial memory của research v2.
 - Không tiêu lượt simulation mới trước khi `field_semantic_audit.json` và `agent_packet_preview.json` đã được kiểm tra ở cổng hiện tại.
+- Gemini runtime không được phụ thuộc cứng vào một model ID dễ hết hạn. Runner phải resolve model hỗ trợ `generateContent` bằng chính API key; model thực tế được chọn phải xuất hiện trong `first_v2_run_status.json` và provenance của lần chạy.
 
 ## Quy tắc hoàn tất mọi tác vụ
 
@@ -34,7 +37,8 @@ Sau mọi thay đổi có ý nghĩa:
 5. Xuất snapshot cục bộ an toàn bằng `python .\scripts\export_research_state.py` để cập nhật:
    - `docs/TRANG_THAI_HIEN_TAI.md`
    - `docs/generated/research_state.json`
-6. Commit và push branch hiện tại lên GitHub.
+6. Với workflow discovery đầu tiên, luôn stage cả `docs/generated/first_v2_run_status.json`; nếu run thành công còn phải có `candidate_semantic_review.json` và `first_v2_hypothesis_dry_run.json`.
+7. Commit và push branch hiện tại lên GitHub.
 
 Ưu tiên dùng một lệnh:
 

@@ -1,27 +1,28 @@
 from __future__ import annotations
 
-"""Agentic research v2: LLM reasoning -> AlphaPlan -> deterministic compiler.
+"""Agentic research v2: hypothesis -> AlphaPlan -> deterministic compiler.
 
-The language model never writes FASTEXPR in this workflow.  It selects a
-hypothesis-compatible path and high-level intents; local code resolves
-operators/windows, compiles, validates, fingerprints and ingests the candidate.
+The language model never writes FASTEXPR or selects concrete operator names in
+this workflow. It reasons about economic hypotheses and high-level research
+paths. Local code resolves operators/windows, compiles, validates, fingerprints
+and ingests candidates.
 """
 
+from dataclasses import replace
+from datetime import UTC, datetime
+import hashlib
 import json
+import re
 import sqlite3
+import uuid
+from pathlib import Path
 from typing import Any
 
 from ..config import Settings
+from ..db import json_dumps, utc_now
 from ..providers import CompletionProvider, provider_for
-from .agentic import (
-    _gemini_settings,
-    _model_name,
-    _parse_object,
-    _write_exchange,
-    discover,
-    packet,
-)
 from .artifacts import ingest_candidate
+from .discovery_v2 import build_discovery_context
 from .field_profiles import compact_payload as compact_field_payload
 from .field_profiles import stored_profile
 from .path_templates import compact_payload as compact_template_payload
@@ -29,6 +30,152 @@ from .plans import PlanError, PlanRequest, compile_plan, resolve_request, store_
 
 
 AGENT_V2_VERSION = "semantic-plan-agent-v2"
+_FAMILY_RE = re.compile(r"^[a-z][a-z0-9_]{2,63}$")
+
+
+def _gemini_settings(settings: Settings) -> Settings:
+    return settings if settings.llm_provider.lower() == "gemini" else replace(settings, llm_provider="gemini")
+
+
+def _model_name(settings: Settings) -> str:
+    return settings.gemini_model if settings.llm_provider.lower() == "gemini" else settings.llm_model
+
+
+def _parse_object(text: str) -> dict[str, Any]:
+    clean = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+    fenced = re.search(r"```(?:json)?\s*(.*?)```", clean, flags=re.DOTALL | re.IGNORECASE)
+    if fenced:
+        clean = fenced.group(1).strip()
+    try:
+        value = json.loads(clean)
+    except json.JSONDecodeError:
+        start, end = clean.find("{"), clean.rfind("}")
+        if start < 0 or end <= start:
+            raise ValueError("Model did not return a JSON object") from None
+        value = json.loads(clean[start:end + 1])
+    if not isinstance(value, dict):
+        raise ValueError("Model response must be a JSON object")
+    return value
+
+
+def _write_exchange(settings: Settings, stage: str, system: str, user: str, answer: str) -> tuple[Path, str]:
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S.%fZ")
+    path = settings.evidence_dir / "agent_v2" / stage / f"{stamp}-{uuid.uuid4().hex[:8]}"
+    path.mkdir(parents=True, exist_ok=False)
+    prompt_hash = hashlib.sha256((system + "\n" + user).encode("utf-8")).hexdigest()
+    (path / "request.json").write_text(
+        json_dumps({"version": AGENT_V2_VERSION, "prompt_hash": prompt_hash, "system": system, "user": user}),
+        encoding="utf-8",
+    )
+    (path / "response.txt").write_text(answer, encoding="utf-8")
+    return path, prompt_hash
+
+
+def _discovery_system() -> str:
+    return """Bạn là tác nhân khám phá giả thuyết alpha định lượng. TUYỆT ĐỐI không viết FASTEXPR, công thức,
+tên toán tử hay kết quả mô phỏng. Chỉ dùng đúng field trong candidate_fields. Mỗi giả thuyết phải có một
+cơ chế kinh tế duy nhất, khác các họ đã bão hòa, có thể bác bỏ, và nếu kế thừa một parent tương quan cao thì
+phải đổi field hoặc cơ chế chứ không đổi cửa sổ/hằng số.
+
+Trả duy nhất JSON có khóa hypotheses. Mỗi phần tử gồm:
+- family: snake_case mới;
+- statement;
+- mechanism;
+- expected_direction: positive|negative|ambiguous;
+- horizon_bucket: event|short|medium|long|very_slow;
+- field_names: 1 hoặc 2 tên chính xác từ candidate_fields;
+- falsifier;
+- novelty: giải thích vì sao khác họ/cơ chế đã thử.
+
+Không được có expression, formula, operator, operator_roles hay parameters."""
+
+
+def _validate_hypothesis(raw: Any, allowed_fields: set[str], existing_families: set[str]) -> tuple[dict[str, Any] | None, str | None]:
+    if not isinstance(raw, dict):
+        return None, "not_object"
+    lowered_keys = {str(key).lower() for key in raw}
+    if lowered_keys & {"expression", "formula", "operator", "operators", "operator_roles", "parameters"}:
+        return None, "forbidden_formula_content"
+    family = str(raw.get("family") or "").strip().lower()
+    if not _FAMILY_RE.fullmatch(family):
+        return None, "invalid_family"
+    if family in existing_families:
+        return None, "existing_family"
+    text_fields = {}
+    for key in ("statement", "mechanism", "falsifier", "novelty"):
+        value = " ".join(str(raw.get(key) or "").split())
+        if not value:
+            return None, f"missing_{key}"
+        text_fields[key] = value
+    direction = str(raw.get("expected_direction") or "ambiguous").strip().lower()
+    if direction not in {"positive", "negative", "ambiguous"}:
+        return None, "invalid_direction"
+    horizon = str(raw.get("horizon_bucket") or "medium").strip().lower()
+    if horizon not in {"event", "short", "medium", "long", "very_slow"}:
+        return None, "invalid_horizon"
+    fields = [str(item).strip() for item in raw.get("field_names", []) if str(item).strip()]
+    fields = list(dict.fromkeys(fields))
+    if not 1 <= len(fields) <= 2 or not set(name.lower() for name in fields).issubset(allowed_fields):
+        return None, "field_outside_packet"
+    return {
+        "family": family,
+        **text_fields,
+        "expected_direction": direction,
+        "horizon_bucket": horizon,
+        "field_names": fields,
+    }, None
+
+
+def discover(
+    connection: sqlite3.Connection,
+    count: int = 6,
+    *,
+    settings: Settings | None = None,
+    provider: CompletionProvider | None = None,
+) -> dict[str, Any]:
+    settings = _gemini_settings(settings or Settings.from_env())
+    context = build_discovery_context(connection, count=count)
+    system = _discovery_system()
+    user = json_dumps(context)
+    answer = (provider or provider_for(settings)).complete(system, user)
+    evidence, prompt_hash = _write_exchange(settings, "discovery", system, user, answer)
+    payload = _parse_object(answer)
+    raw_items = payload.get("hypotheses")
+    if not isinstance(raw_items, list):
+        raise ValueError("Hypothesis response has no hypotheses list")
+    allowed_fields = {str(item["name"]).lower() for item in context["candidate_fields"]}
+    existing_families = {str(row[0]).lower() for row in connection.execute("SELECT family FROM hypotheses")}
+    accepted: list[dict[str, Any]] = []
+    rejected: list[dict[str, Any]] = []
+    for raw in raw_items[: max(count * 2, count)]:
+        card, reason = _validate_hypothesis(raw, allowed_fields, existing_families)
+        if card is None:
+            rejected.append({"reason": reason})
+            continue
+        hypothesis_id = str(uuid.uuid4())
+        card_id = str(uuid.uuid4())
+        connection.execute(
+            "INSERT INTO hypotheses VALUES(?,?,?,?,?,?,?)",
+            (hypothesis_id, card["family"], card["statement"], card["mechanism"], card["expected_direction"], "semantic_discovery_v2", utc_now()),
+        )
+        connection.execute(
+            """INSERT INTO hypothesis_cards VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                card_id, hypothesis_id, card["family"], card["statement"], card["mechanism"], card["expected_direction"],
+                card["horizon_bucket"], json_dumps([]), json_dumps(card["field_names"]), json_dumps([]),
+                card["falsifier"], json_dumps({"statement": card["novelty"]}), "discovered", "semantic_discovery_v2",
+                _model_name(settings), prompt_hash, str(evidence), utc_now(),
+            ),
+        )
+        existing_families.add(card["family"])
+        accepted.append({"card_id": card_id, "family": card["family"], "field_names": card["field_names"], "horizon_bucket": card["horizon_bucket"]})
+        if len(accepted) >= count:
+            break
+    return {"version": AGENT_V2_VERSION, "evidence_path": str(evidence), "accepted": accepted, "rejected": rejected}
+
+
+def packet(connection: sqlite3.Connection, count: int = 6) -> dict[str, Any]:
+    return build_discovery_context(connection, count=count)
 
 
 def _design_system() -> str:
@@ -145,9 +292,9 @@ def design(
             continue
 
         design_system = _design_system()
-        design_user = json.dumps({"version": AGENT_V2_VERSION, "requested_plans": per_card, "hypothesis_card": card}, ensure_ascii=False)
+        design_user = json_dumps({"version": AGENT_V2_VERSION, "requested_plans": per_card, "hypothesis_card": card})
         answer = model.complete(design_system, design_user)
-        design_evidence, design_hash = _write_exchange(settings, "plan_design_v2", design_system, design_user, answer)
+        design_evidence, design_hash = _write_exchange(settings, "plan_design", design_system, design_user, answer)
         payload = _parse_object(answer)
         raw_plans = payload.get("plans")
         if not isinstance(raw_plans, list):
@@ -155,9 +302,9 @@ def design(
         raw_plans = [item for item in raw_plans if isinstance(item, dict)][:per_card]
 
         critic_system = _critic_system()
-        critic_user = json.dumps({"hypothesis_card": card, "plans": raw_plans}, ensure_ascii=False)
+        critic_user = json_dumps({"hypothesis_card": card, "plans": raw_plans})
         critic_answer = model.complete(critic_system, critic_user)
-        critic_evidence, _ = _write_exchange(settings, "plan_critic_v2", critic_system, critic_user, critic_answer)
+        critic_evidence, _ = _write_exchange(settings, "plan_critic", critic_system, critic_user, critic_answer)
         decisions = _decisions(critic_answer, len(raw_plans))
 
         accepted_here: list[dict[str, Any]] = []
@@ -207,9 +354,9 @@ def design(
 
 def run_cycle(
     connection: sqlite3.Connection,
-    count: int = 4,
+    count: int = 6,
     *,
-    per_card: int = 2,
+    per_card: int = 1,
     settings: Settings | None = None,
     provider: CompletionProvider | None = None,
 ) -> dict[str, Any]:

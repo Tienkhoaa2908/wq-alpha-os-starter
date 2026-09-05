@@ -31,12 +31,12 @@ def _settings() -> Settings:
     )
 
 
-def _candidate(index: int, theme: str, dataset: str) -> SearchCandidate:
+def _candidate(index: int, theme: str, dataset: str, template: str = "slow_level_peer") -> SearchCandidate:
     return SearchCandidate(
         field_name=f"field_{index}",
         dataset=dataset,
         theme=theme,
-        template_id="slow_level_peer",
+        template_id=template,
         horizon_bucket="long",
         expression=f"normalize(group_rank(ts_rank(field_{index}, 252), industry), useStd=true, limit=3)",
         base_score=3.0 - index * 0.01,
@@ -68,14 +68,31 @@ class FreeStackTests(unittest.TestCase):
 
 
 class AutonomousSelectionTests(unittest.TestCase):
-    def test_selects_six_with_theme_and_dataset_breadth(self):
+    def test_selects_six_with_theme_dataset_and_template_breadth(self):
         themes = ["value", "price", "risk_volatility", "sentiment_news", "quality", "relationship"]
-        pool = [_candidate(i, theme, f"Dataset {i}") for i, theme in enumerate(themes)]
+        templates = [
+            "slow_level_peer", "extremum_recency", "risk_dispersion",
+            "vector_event_novelty", "peer_residual", "information_staleness",
+        ]
+        pool = [
+            _candidate(i, theme, f"Dataset {i}", templates[i])
+            for i, theme in enumerate(themes)
+        ]
         selected = select_diverse(pool, 6)
         self.assertEqual(len(selected), 6)
         self.assertEqual(len({item.theme for item in selected}), 6)
         self.assertEqual(len({item.dataset for item in selected}), 6)
+        self.assertGreaterEqual(len({item.template_id for item in selected}), 4)
         self.assertEqual(len({item.field_name for item in selected}), 6)
+
+    def test_rejects_batch_with_only_three_templates(self):
+        templates = ["slow_level_peer", "extremum_recency", "risk_dispersion"]
+        pool = [
+            _candidate(i, f"theme_{i}", f"Dataset {i}", templates[i % 3])
+            for i in range(6)
+        ]
+        with self.assertRaisesRegex(RuntimeError, "templates"):
+            select_diverse(pool, 6)
 
     def test_family_is_stable_and_parameter_free(self):
         item = _candidate(1, "price", "Price")

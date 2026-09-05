@@ -10,18 +10,19 @@ from typing import Any
 from .brain.client import BrainClient
 from .brain.simulation import plan, refresh_analytics, run_pending
 from .catalog import import_brain_snapshot, import_legacy, sync_from_brain
-from .config import PROJECT_ROOT, Settings
-from .db import initialize, json_dumps, session
+from .config import Settings
+from .db import initialize, session
 from .dsl.validator import validate_expression
 from .exporter import export_csv
-from .research.prompts import build_prompt
-from .research.proposer import ingest_proposals, parse_response, propose, write_prompt_packet
-from .research.reviewer import review_pending
-from .research.seeds import seed_family
 from .research.agentic_v2 import design as agent_design
 from .research.agentic_v2 import discover as agent_discover
 from .research.agentic_v2 import packet as agent_packet
 from .research.agentic_v2 import run_cycle as agent_run_cycle
+from .research.prompts import build_prompt
+from .research.proposer import ingest_proposals, parse_response, propose, write_prompt_packet
+from .research.reviewer import review_pending
+from .research.seeds import seed_family
+from .research.semantic_validator import validate_semantics
 
 
 def _print(value: Any) -> None:
@@ -48,8 +49,7 @@ def cmd_catalog(args: argparse.Namespace) -> None:
     elif args.catalog_command == "import-snapshot":
         result = import_brain_snapshot(Path(args.source).resolve(), None, args.region, args.universe, args.delay)
     else:
-        client = BrainClient()
-        result = sync_from_brain(client, None, args.region, args.universe, args.delay)
+        result = sync_from_brain(BrainClient(), None, args.region, args.universe, args.delay)
     _print(result)
 
 
@@ -66,25 +66,29 @@ def cmd_seed(args: argparse.Namespace) -> None:
 def cmd_validate(args: argparse.Namespace) -> None:
     initialize()
     with session() as connection:
-        _print(validate_expression(args.expression, connection).to_dict())
+        dsl = validate_expression(args.expression, connection)
+        semantic = validate_semantics(args.expression, connection)
+    _print({"valid": dsl.valid and semantic.valid, "dsl": dsl.to_dict(), "semantic": semantic.to_dict()})
 
 
 def cmd_prompt(args: argparse.Namespace) -> None:
+    """Legacy direct-expression prompt packet; retained only for reproducibility."""
     initialize()
     with session() as connection:
         packet = build_prompt(connection, args.count)
         path = write_prompt_packet(packet, Path(args.output).resolve() if args.output else None)
-    _print({"ok": True, "path": str(path), "prompt_hash": packet.prompt_hash})
+    _print({"legacy": True, "ok": True, "path": str(path), "prompt_hash": packet.prompt_hash})
 
 
 def cmd_propose(args: argparse.Namespace) -> None:
+    """Legacy direct-expression proposer; v2 users should use `agent` instead."""
     initialize()
     settings = Settings.from_env()
     if args.provider:
         settings = replace(settings, llm_provider=args.provider.replace("-", "_"))
     with session() as connection:
         path, results = propose(connection, args.count, settings)
-    _print({"response_path": str(path), **_result_counts(results)})
+    _print({"legacy": True, "response_path": str(path), **_result_counts(results)})
 
 
 def cmd_ingest(args: argparse.Namespace) -> None:
@@ -153,6 +157,7 @@ def cmd_status(_: argparse.Namespace) -> None:
         families = [dict(row) for row in connection.execute(
             """SELECT f.family,f.completed_runs,f.total_reward,f.best_reward,f.last_artifact_id,
                       coalesce(t.effective_trial_count,0) effective_trial_count,
+                      coalesce(t.semantic_branches,0) semantic_branches,
                       coalesce(t.parameter_only_trials,0) parameter_only_trials,
                       coalesce(t.stopped,0) stopped,t.stop_reason
                FROM family_stats f LEFT JOIN family_trial_stats t ON t.family=f.family
@@ -163,12 +168,13 @@ def cmd_status(_: argparse.Namespace) -> None:
 
 def cmd_run(args: argparse.Namespace) -> None:
     from .research.orchestrator import run_cycle
+
     initialize()
     settings = Settings.from_env()
     if args.provider:
         settings = replace(settings, llm_provider=args.provider.replace("-", "_"))
     with session() as connection:
-        _print(run_cycle(connection, args.budget, settings=settings))
+        _print(run_cycle(connection, args.budget, settings=settings, simulate=not args.no_simulate))
 
 
 def cmd_agent(args: argparse.Namespace) -> None:
@@ -186,6 +192,7 @@ def cmd_agent(args: argparse.Namespace) -> None:
 
 
 def cmd_knowledge(args: argparse.Namespace) -> None:
+    from .research.field_review import review_ambiguous_fields
     from .research.knowledge_base import rebuild_all
     from .research.operator_kb import assert_semantic_coverage
 
@@ -204,6 +211,8 @@ def cmd_knowledge(args: argparse.Namespace) -> None:
             result = [dict(row) for row in connection.execute(
                 "SELECT * FROM field_profiles ORDER BY confidence DESC,name LIMIT ?", (args.limit,)
             )]
+        elif args.knowledge_command == "review-fields":
+            result = review_ambiguous_fields(connection, args.limit)
         else:
             result = [dict(row) for row in connection.execute(
                 "SELECT * FROM motif_stats ORDER BY completed_runs DESC,pass_rate DESC LIMIT ?", (args.limit,)
@@ -232,9 +241,10 @@ def cmd_research(args: argparse.Namespace) -> None:
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(prog="alpha-os", description="Dây chuyền nghiên cứu alpha có bằng chứng")
+    root = argparse.ArgumentParser(prog="alpha-os", description="Hệ thống nghiên cứu alpha theo bằng chứng")
     sub = root.add_subparsers(dest="command", required=True)
-    item = sub.add_parser("init", help="Khởi tạo cơ sở dữ liệu")
+
+    item = sub.add_parser("init", help="Khởi tạo/nâng cấp cơ sở dữ liệu")
     item.set_defaults(func=cmd_init)
 
     item = sub.add_parser("catalog", help="Nhập hoặc đồng bộ danh mục")
@@ -254,24 +264,25 @@ def parser() -> argparse.ArgumentParser:
     sync.add_argument("--delay", type=int, default=1)
     sync.set_defaults(func=cmd_catalog)
 
-    item = sub.add_parser("seed", help="Tạo họ alpha nền")
+    item = sub.add_parser("seed", help="Tạo họ alpha nền cũ (tương thích lịch sử)")
     item.add_argument("--field", required=True)
     item.set_defaults(func=cmd_seed)
-    item = sub.add_parser("validate", help="Kiểm tra một biểu thức")
+    item = sub.add_parser("validate", help="Kiểm tra cú pháp, kiểu và ngữ nghĩa một biểu thức")
     item.add_argument("expression")
     item.set_defaults(func=cmd_validate)
-    item = sub.add_parser("prompt", help="Xuất gói câu nhắc cho Codex hoặc mô hình khác")
+
+    item = sub.add_parser("prompt", help="[cũ] Xuất gói câu nhắc sinh biểu thức trực tiếp")
     item.add_argument("--count", type=int, default=8)
     item.add_argument("--output")
     item.set_defaults(func=cmd_prompt)
-    item = sub.add_parser("propose", help="Gọi mô hình sinh alpha theo cấu hình cũ")
+    item = sub.add_parser("propose", help="[cũ] Gọi mô hình sinh FASTEXPR trực tiếp; không dùng cho v2")
     item.add_argument("--count", type=int, default=8)
-    item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"),
-                      help="Ghi đè ALPHA_LLM_PROVIDER trong .env cho lần chạy này")
+    item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"))
     item.set_defaults(func=cmd_propose)
-    item = sub.add_parser("ingest-proposals", help="Nhập phản hồi JSON từ mô hình")
+    item = sub.add_parser("ingest-proposals", help="Nhập phản hồi JSON thủ công/cũ")
     item.add_argument("file")
     item.set_defaults(func=cmd_ingest)
+
     item = sub.add_parser("candidates", help="Liệt kê alpha")
     item.add_argument("--status", default="all")
     item.add_argument("--limit", type=int, default=30)
@@ -293,40 +304,44 @@ def parser() -> argparse.ArgumentParser:
     item.set_defaults(func=cmd_export)
     item = sub.add_parser("status", help="Xem trạng thái kho nghiên cứu")
     item.set_defaults(func=cmd_status)
-    item = sub.add_parser("run", help="Chạy vòng cũ sinh, mô phỏng và đánh giá")
-    item.add_argument("--budget", type=int, default=8)
-    item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"),
-                      help="Ghi đè ALPHA_LLM_PROVIDER trong .env cho lần chạy này")
+
+    item = sub.add_parser("run", help="Chạy một vòng nghiên cứu v2 đầy đủ")
+    item.add_argument("--budget", type=int, default=12)
+    item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"))
+    item.add_argument("--no-simulate", action="store_true", help="Chỉ tạo/biên dịch ứng viên; không gửi BRAIN")
     item.set_defaults(func=cmd_run)
 
     item = sub.add_parser("agent", help="Tác nhân v2: giả thuyết -> AlphaPlan -> biên dịch cục bộ")
     child = item.add_subparsers(dest="agent_command", required=True)
     child_packet = child.add_parser("packet", help="Xuất gói khám phá, không gọi Gemini")
-    child_packet.add_argument("--count", type=int, default=4)
+    child_packet.add_argument("--count", type=int, default=6)
     child_packet.set_defaults(func=cmd_agent)
-    child_discover = child.add_parser("discover", help="Gọi Gemini để sinh thẻ giả thuyết, chưa sinh alpha")
-    child_discover.add_argument("--count", type=int, default=4)
+    child_discover = child.add_parser("discover", help="Gọi Gemini chỉ để sinh thẻ giả thuyết")
+    child_discover.add_argument("--count", type=int, default=6)
     child_discover.set_defaults(func=cmd_agent)
     child_design = child.add_parser("design", help="Gemini chỉ chọn AlphaPlan; code tự biên dịch FASTEXPR")
-    child_design.add_argument("--limit", type=int, default=4)
-    child_design.add_argument("--per-card", type=int, default=2)
+    child_design.add_argument("--limit", type=int, default=6)
+    child_design.add_argument("--per-card", type=int, default=1)
     child_design.set_defaults(func=cmd_agent)
     child_cycle = child.add_parser("run", help="Khám phá và thiết kế v2; không mô phỏng")
-    child_cycle.add_argument("--count", type=int, default=4)
-    child_cycle.add_argument("--per-card", type=int, default=2)
+    child_cycle.add_argument("--count", type=int, default=6)
+    child_cycle.add_argument("--per-card", type=int, default=1)
     child_cycle.set_defaults(func=cmd_agent)
 
-    item = sub.add_parser("knowledge", help="Cơ sở tri thức operator/field/motif")
+    item = sub.add_parser("knowledge", help="Cơ sở tri thức toán tử/trường/motif")
     child = item.add_subparsers(dest="knowledge_command", required=True)
-    child_build = child.add_parser("build", help="Vật chất hóa toàn bộ tri thức cục bộ; không gọi mạng")
+    child_build = child.add_parser("build", help="Vật chất hóa tri thức cục bộ; không gọi mạng")
     child_build.set_defaults(func=cmd_knowledge)
-    child_ops = child.add_parser("operators", help="Xem semantic operator profiles")
+    child_ops = child.add_parser("operators", help="Xem hồ sơ ngữ nghĩa toán tử")
     child_ops.add_argument("--limit", type=int, default=100)
     child_ops.set_defaults(func=cmd_knowledge)
-    child_fields = child.add_parser("fields", help="Xem semantic field profiles")
+    child_fields = child.add_parser("fields", help="Xem hồ sơ ngữ nghĩa trường")
     child_fields.add_argument("--limit", type=int, default=50)
     child_fields.set_defaults(func=cmd_knowledge)
-    child_motifs = child.add_parser("motifs", help="Xem empirical motif statistics")
+    child_review = child.add_parser("review-fields", help="Gemini rà soát chỉ các trường mơ hồ; không sinh alpha")
+    child_review.add_argument("--limit", type=int, default=20)
+    child_review.set_defaults(func=cmd_knowledge)
+    child_motifs = child.add_parser("motifs", help="Xem thống kê motif thực nghiệm")
     child_motifs.add_argument("--limit", type=int, default=50)
     child_motifs.set_defaults(func=cmd_knowledge)
 
@@ -335,7 +350,7 @@ def parser() -> argparse.ArgumentParser:
     child_cycle_plan = child.add_parser("cycle-plan", help="Chia ngân sách 50/25/25 cho vòng nghiên cứu")
     child_cycle_plan.add_argument("--budget", type=int, default=12)
     child_cycle_plan.set_defaults(func=cmd_research)
-    child_diag = child.add_parser("diagnose", help="Chẩn đoán failure mode của các mô phỏng gần nhất")
+    child_diag = child.add_parser("diagnose", help="Chẩn đoán dạng thất bại của các mô phỏng gần nhất")
     child_diag.add_argument("--limit", type=int, default=20)
     child_diag.set_defaults(func=cmd_research)
     return root

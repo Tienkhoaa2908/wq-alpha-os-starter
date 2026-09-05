@@ -1,8 +1,8 @@
 {
   "snapshot": {
-    "generated_at": "2026-09-05T15:24:28.322150+00:00",
+    "generated_at": "2026-09-05T15:36:42.641759+00:00",
     "git_branch": "alpha-research-v2",
-    "git_commit": "d93a092cee71ab4a0b151ce179cb4b192cb9a844",
+    "git_commit": "2df62e768dc83aea90c005a83f6c482d794b3e15",
     "source": "local SQLite sanitized snapshot"
   },
   "configuration": {
@@ -60,9 +60,9 @@
     "turnover": 0.028,
     "self_correlation": 0.9415,
     "annual": {
-      "years": 0,
-      "positive_sharpe_years": 0,
-      "min_sharpe": null
+      "years": 5,
+      "positive_sharpe_years": 5,
+      "min_sharpe": 0.59
     },
     "platform_alpha_id": "d5Oq1owX",
     "finished_at": "2026-09-04T16:24:59.701201+00:00"

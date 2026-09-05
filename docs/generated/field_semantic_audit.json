@@ -1,0 +1,1119 @@
+{
+  "generated_at": "2026-09-05T15:36:31.928016+00:00",
+  "total_profiles": 7642,
+  "quality": {
+    "generic_theme": {
+      "count": 1021,
+      "rate": 0.133604
+    },
+    "unknown_unit": {
+      "count": 3371,
+      "rate": 0.441115
+    },
+    "low_confidence_lt_0_70": {
+      "count": 1021,
+      "rate": 0.133604
+    },
+    "ambiguous_direction": {
+      "count": 5002,
+      "rate": 0.654541
+    },
+    "high_coverage_generic": {
+      "count": 39,
+      "rate": 0.005103
+    },
+    "vector_fields": 1387,
+    "vector_with_nonvector_form": 0
+  },
+  "distributions": {
+    "economic_theme": {
+      "analyst_revision": 2161,
+      "value": 2152,
+      "generic": 1021,
+      "sentiment_news": 668,
+      "profitability": 421,
+      "growth": 308,
+      "risk_volatility": 209,
+      "relationship": 168,
+      "options": 161,
+      "leverage": 159,
+      "price": 136,
+      "quality": 41,
+      "earnings_dispersion": 26,
+      "volume_liquidity": 6,
+      "model_score": 4,
+      "insider": 1
+    },
+    "semantic_form": {
+      "ratio": 1888,
+      "level": 1164,
+      "vector_event": 1045,
+      "forecast": 1007,
+      "score": 812,
+      "count": 383,
+      "price": 320,
+      "vector_count": 306,
+      "flow": 203,
+      "return": 198,
+      "dispersion": 115,
+      "event": 81,
+      "volume": 78,
+      "vector_score": 36,
+      "probability": 6
+    },
+    "update_cadence": {
+      "slow": 3076,
+      "medium": 2521,
+      "event": 1691,
+      "fast": 354
+    },
+    "data_type": {
+      "MATRIX": 6103,
+      "VECTOR": 1387,
+      "GROUP": 142,
+      "UNIVERSE": 6,
+      "SYMBOL": 4
+    },
+    "classification_source": {
+      "deterministic_v2": 7642
+    },
+    "unit_family": {
+      "unknown": 3371,
+      "dimensionless_or_ratio": 2742,
+      "count": 689,
+      "currency_price": 320,
+      "currency_flow": 203,
+      "return": 198,
+      "volume": 78,
+      "risk_measure": 41
+    },
+    "signedness": {
+      "unknown": 6209,
+      "nonnegative": 1433
+    },
+    "direction_prior": {
+      "ambiguous": 5002,
+      "negative": 2640
+    },
+    "sparsity_class": {
+      "slow_stepwise": 3076,
+      "dense": 2875,
+      "event_sparse": 1691
+    },
+    "peer_dependence": {
+      "high": 5242,
+      "medium": 2400
+    }
+  },
+  "theme_form_pairs": [
+    {
+      "economic_theme": "value",
+      "semantic_form": "ratio",
+      "n": 888
+    },
+    {
+      "economic_theme": "generic",
+      "semantic_form": "level",
+      "n": 642
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "ratio",
+      "n": 611
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "n": 510
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "score",
+      "n": 435
+    },
+    {
+      "economic_theme": "value",
+      "semantic_form": "forecast",
+      "n": 382
+    },
+    {
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "n": 379
+    },
+    {
+      "economic_theme": "generic",
+      "semantic_form": "vector_event",
+      "n": 258
+    },
+    {
+      "economic_theme": "value",
+      "semantic_form": "score",
+      "n": 235
+    },
+    {
+      "economic_theme": "profitability",
+      "semantic_form": "ratio",
+      "n": 183
+    },
+    {
+      "economic_theme": "value",
+      "semantic_form": "flow",
+      "n": 178
+    },
+    {
+      "economic_theme": "value",
+      "semantic_form": "level",
+      "n": 171
+    },
+    {
+      "economic_theme": "value",
+      "semantic_form": "vector_event",
+      "n": 165
+    },
+    {
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "n": 149
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "count",
+      "n": 142
+    },
+    {
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_count",
+      "n": 137
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "price",
+      "n": 125
+    },
+    {
+      "economic_theme": "leverage",
+      "semantic_form": "level",
+      "n": 121
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "vector_event",
+      "n": 116
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "dispersion",
+      "n": 94
+    },
+    {
+      "economic_theme": "growth",
+      "semantic_form": "return",
+      "n": 82
+    },
+    {
+      "economic_theme": "analyst_revision",
+      "semantic_form": "return",
+      "n": 79
+    },
+    {
+      "economic_theme": "profitability",
+      "semantic_form": "score",
+      "n": 79
+    },
+    {
+      "economic_theme": "growth",
+      "semantic_form": "vector_event",
+      "n": 73
+    },
+    {
+      "economic_theme": "profitability",
+      "semantic_form": "forecast",
+      "n": 71
+    },
+    {
+      "economic_theme": "risk_volatility",
+      "semantic_form": "vector_count",
+      "n": 70
+    },
+    {
+      "economic_theme": "sentiment_news",
+      "semantic_form": "event",
+      "n": 65
+    },
+    {
+      "economic_theme": "price",
+      "semantic_form": "vector_count",
+      "n": 61
+    },
+    {
+      "economic_theme": "profitability",
+      "semantic_form": "count",
+      "n": 57
+    },
+    {
+      "economic_theme": "generic",
+      "semantic_form": "ratio",
+      "n": 51
+    },
+    {
+      "economic_theme": "risk_volatility",
+      "semantic_form": "ratio",
+      "n": 51
+    },
+    {
+      "economic_theme": "options",
+      "semantic_form": "price",
+      "n": 50
+    },
+    {
+      "economic_theme": "growth",
+      "semantic_form": "score",
+      "n": 48
+    },
+    {
+      "economic_theme": "generic",
+      "semantic_form": "count",
+      "n": 43
+    },
+    {
+      "economic_theme": "value",
+      "semantic_form": "count",
+      "n": 42
+    },
+    {
+      "economic_theme": "value",
+      "semantic_form": "price",
+      "n": 40
+    },
+    {
+      "economic_theme": "growth",
+      "semantic_form": "price",
+      "n": 39
+    },
+    {
+      "economic_theme": "options",
+      "semantic_form": "count",
+      "n": 36
+    },
+    {
+      "economic_theme": "growth",
+      "semantic_form": "ratio",
+      "n": 35
+    },
+    {
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_score",
+      "n": 33
+    }
+  ],
+  "dataset_summary": [
+    {
+      "dataset_name": "Analysts' Factor Model",
+      "fields": 3256,
+      "avg_confidence": 0.8975,
+      "generic_fields": 0,
+      "unknown_unit_fields": 400,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "fields": 1324,
+      "avg_confidence": 0.7785,
+      "generic_fields": 0,
+      "unknown_unit_fields": 860,
+      "vector_fields": 219
+    },
+    {
+      "dataset_name": "Company Fundamental Data for Equity",
+      "fields": 886,
+      "avg_confidence": 0.439,
+      "generic_fields": 669,
+      "unknown_unit_fields": 782,
+      "vector_fields": 312
+    },
+    {
+      "dataset_name": "US News Data",
+      "fields": 875,
+      "avg_confidence": 0.8112,
+      "generic_fields": 0,
+      "unknown_unit_fields": 521,
+      "vector_fields": 800
+    },
+    {
+      "dataset_name": "Report Footnotes",
+      "fields": 766,
+      "avg_confidence": 0.5661,
+      "generic_fields": 346,
+      "unknown_unit_fields": 549,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Relationship Data for Equity",
+      "fields": 165,
+      "avg_confidence": 0.7048,
+      "generic_fields": 0,
+      "unknown_unit_fields": 146,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Ravenpack News Data",
+      "fields": 121,
+      "avg_confidence": 0.7582,
+      "generic_fields": 0,
+      "unknown_unit_fields": 85,
+      "vector_fields": 50
+    },
+    {
+      "dataset_name": "Options Analytics",
+      "fields": 74,
+      "avg_confidence": 0.8319,
+      "generic_fields": 0,
+      "unknown_unit_fields": 6,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Volatility Data",
+      "fields": 64,
+      "avg_confidence": 0.775,
+      "generic_fields": 0,
+      "unknown_unit_fields": 0,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Fundamental Scores",
+      "fields": 24,
+      "avg_confidence": 0.8204,
+      "generic_fields": 0,
+      "unknown_unit_fields": 6,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Price Volume Data for Equity",
+      "fields": 24,
+      "avg_confidence": 0.87,
+      "generic_fields": 0,
+      "unknown_unit_fields": 0,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Research Sentiment Data",
+      "fields": 19,
+      "avg_confidence": 0.8442,
+      "generic_fields": 0,
+      "unknown_unit_fields": 6,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Sentiment Data for Equity",
+      "fields": 18,
+      "avg_confidence": 0.8556,
+      "generic_fields": 0,
+      "unknown_unit_fields": 0,
+      "vector_fields": 6
+    },
+    {
+      "dataset_name": "Systematic Risk Metrics",
+      "fields": 16,
+      "avg_confidence": 0.78,
+      "generic_fields": 0,
+      "unknown_unit_fields": 4,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Universe Dataset",
+      "fields": 6,
+      "avg_confidence": 0.35,
+      "generic_fields": 6,
+      "unknown_unit_fields": 6,
+      "vector_fields": 0
+    },
+    {
+      "dataset_name": "Social Media Data for Equity",
+      "fields": 4,
+      "avg_confidence": 0.9,
+      "generic_fields": 0,
+      "unknown_unit_fields": 0,
+      "vector_fields": 0
+    }
+  ],
+  "review_candidates": [
+    {
+      "name": "top1000",
+      "dataset_name": "Universe Dataset",
+      "data_type": "UNIVERSE",
+      "economic_theme": "generic",
+      "semantic_form": "level",
+      "update_cadence": "slow",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.35,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 10
+    },
+    {
+      "name": "top200",
+      "dataset_name": "Universe Dataset",
+      "data_type": "UNIVERSE",
+      "economic_theme": "generic",
+      "semantic_form": "level",
+      "update_cadence": "slow",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.35,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 10
+    },
+    {
+      "name": "top2000",
+      "dataset_name": "Universe Dataset",
+      "data_type": "UNIVERSE",
+      "economic_theme": "generic",
+      "semantic_form": "level",
+      "update_cadence": "slow",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.35,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 2
+    },
+    {
+      "name": "top3000",
+      "dataset_name": "Universe Dataset",
+      "data_type": "UNIVERSE",
+      "economic_theme": "generic",
+      "semantic_form": "level",
+      "update_cadence": "slow",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.35,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 56
+    },
+    {
+      "name": "top500",
+      "dataset_name": "Universe Dataset",
+      "data_type": "UNIVERSE",
+      "economic_theme": "generic",
+      "semantic_form": "level",
+      "update_cadence": "slow",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.35,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 39
+    },
+    {
+      "name": "topsp500",
+      "dataset_name": "Universe Dataset",
+      "data_type": "UNIVERSE",
+      "economic_theme": "generic",
+      "semantic_form": "level",
+      "update_cadence": "slow",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.35,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 4
+    },
+    {
+      "name": "advantageous_position_flag",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 69
+    },
+    {
+      "name": "anl4_detailltv4_preest",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "VECTOR",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 44
+    },
+    {
+      "name": "anl4_dez1basicafv4_preest",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "VECTOR",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 20
+    },
+    {
+      "name": "anl4_dez1basicqfv4_preest",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "VECTOR",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 21
+    },
+    {
+      "name": "anl4_fs_actuals_advanced_af_nd_currency",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 996
+    },
+    {
+      "name": "anl4_fs_detail_estimates_basic_af_v4_nd_currency",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 276
+    },
+    {
+      "name": "anl4_fs_guidances_advanced_af_nd_currency",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 2
+    },
+    {
+      "name": "anl4_fs_guidances_advanced_af_nd_shr_minguidance",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 4
+    },
+    {
+      "name": "anl4_fs_guidances_advanced_qf_nd_shr_maxguidance",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 4
+    },
+    {
+      "name": "anl4_fs_guidances_basic_af_nd_sales_minguidance",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 19
+    },
+    {
+      "name": "anl4_fs_guidances_basic_qf_nd_eps_maxguidance",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 56
+    },
+    {
+      "name": "anl4_fs_guidances_basic_qf_nd_sales_maxguidance",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 73
+    },
+    {
+      "name": "average_true_range_fourteen_periods",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 18
+    },
+    {
+      "name": "fourteen_period_avg_true_range",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 13
+    },
+    {
+      "name": "global_novelty_chain_elapsed_ms",
+      "dataset_name": "Ravenpack News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 165
+    },
+    {
+      "name": "guidance_reporting_currency",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 96
+    },
+    {
+      "name": "main_min_minutes_to_one_pct_move",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 2
+    },
+    {
+      "name": "main_session_market_cap",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 3
+    },
+    {
+      "name": "main_session_performance_vs_benchmark",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 4
+    },
+    {
+      "name": "max_gross_income_guidance_2",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 43
+    },
+    {
+      "name": "max_shares_outstanding_guidance",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 73
+    },
+    {
+      "name": "median_sales_estimate",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 149
+    },
+    {
+      "name": "min_gross_income_guidance_2",
+      "dataset_name": "Analyst Estimate Data for Equity",
+      "data_type": "MATRIX",
+      "economic_theme": "analyst_revision",
+      "semantic_form": "forecast",
+      "update_cadence": "medium",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 31
+    },
+    {
+      "name": "min_minutes_to_one_pct_move_2_1555",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 9
+    },
+    {
+      "name": "mkt_cap_val_2",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 5
+    },
+    {
+      "name": "novelty_chain_elapsed_ms",
+      "dataset_name": "Ravenpack News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 148
+    },
+    {
+      "name": "nws18_ber",
+      "dataset_name": "Ravenpack News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 646
+    },
+    {
+      "name": "nws18_event_relevance",
+      "dataset_name": "Ravenpack News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 1013
+    },
+    {
+      "name": "optimal_position_indicator",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 7
+    },
+    {
+      "name": "position_advantage_flag",
+      "dataset_name": "US News Data",
+      "data_type": "VECTOR",
+      "economic_theme": "sentiment_news",
+      "semantic_form": "vector_event",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 3
+    },
+    {
+      "name": "pv13_di_5l",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 12
+    },
+    {
+      "name": "pv13_di_6l",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": 100.0,
+      "alpha_count": 12
+    },
+    {
+      "name": "pv13_h2_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 2942
+    },
+    {
+      "name": "pv13_h_min10_top3000_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 983
+    },
+    {
+      "name": "pv13_h_min20_top3000_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 1077
+    },
+    {
+      "name": "pv13_h_min2_3000_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 21078
+    },
+    {
+      "name": "pv13_h_min2_focused_pureplay_3000_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 12182
+    },
+    {
+      "name": "pv13_h_min30_3000_mapped_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 549
+    },
+    {
+      "name": "pv13_h_min52_3000_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 501
+    },
+    {
+      "name": "pv13_h_min5_3000_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 651
+    },
+    {
+      "name": "pv13_hierarchy23_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 1357
+    },
+    {
+      "name": "pv13_hierarchy_f2_sector",
+      "dataset_name": "Relationship Data for Equity",
+      "data_type": "GROUP",
+      "economic_theme": "relationship",
+      "semantic_form": "level",
+      "update_cadence": "event",
+      "unit_family": "unknown",
+      "direction_prior": "ambiguous",
+      "confidence": 0.7,
+      "coverage": 100.0,
+      "date_coverage": null,
+      "alpha_count": 93
+    }
+  ],
+  "notes": [
+    "Descriptions are intentionally omitted from the source-controlled audit.",
+    "Generic/unknown/low-confidence counts are calibration signals, not automatic rejection criteria.",
+    "LLM review should be limited to ambiguous high-value fields after this deterministic audit is inspected."
+  ]
+}

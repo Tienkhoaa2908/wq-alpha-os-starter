@@ -1,0 +1,1098 @@
+{
+  "generated_at": "2026-09-05T15:36:42.218681+00:00",
+  "packet": {
+    "version": "semantic-discovery-v2",
+    "requested_hypotheses": 6,
+    "candidate_fields": [
+      {
+        "name": "mdl77_opricemomentumfactor_normalmf60d",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "analyst_revision",
+        "form": "flow",
+        "cadence": "medium",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          20,
+          63,
+          126
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_oearningmomentumfactor_surp",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "earnings_dispersion",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 95.5,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_liquidityriskfactor_monchgsip",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "growth",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "visibility_ratio",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "price",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_vra_earningsqualitymodule",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "profitability",
+        "form": "score",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_liquidityriskfactor_idb",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "quality",
+        "form": "score",
+        "cadence": "slow",
+        "direction_prior": "negative",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 86.16,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "pcr_vol_20",
+        "dataset": "Options Analytics",
+        "data_type": "MATRIX",
+        "theme": "risk_volatility",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 98.1,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_valueanalystmodelqva_pegy",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "value",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "negative",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_liquidityriskfactor_yoychgda",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "analyst_revision",
+        "form": "score",
+        "cadence": "medium",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          20,
+          63,
+          126
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_earningmomentumfactor_surp",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "earnings_dispersion",
+        "form": "forecast",
+        "cadence": "medium",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          20,
+          63,
+          126
+        ],
+        "coverage": 94.67,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_liquidityriskfactor_monchgsip_alt",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "growth",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_v1_400_visiratio",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "price",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_2_managementqualityfactor_chgollev",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "profitability",
+        "form": "score",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "pcr_vol_150",
+        "dataset": "Options Analytics",
+        "data_type": "MATRIX",
+        "theme": "risk_volatility",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 98.1,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "previous_day_open_close_change_pct_all",
+        "dataset": "US News Data",
+        "data_type": "VECTOR",
+        "theme": "value",
+        "form": "vector_count",
+        "cadence": "event",
+        "direction_prior": "negative",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_omomemtumanalystmodel_jdaksr_amq",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "analyst_revision",
+        "form": "dispersion",
+        "cadence": "medium",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          20,
+          63,
+          126
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_2_earningmomentumfactor400_surp",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "earnings_dispersion",
+        "form": "forecast",
+        "cadence": "medium",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          20,
+          63,
+          126
+        ],
+        "coverage": 94.67,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_2_liquidityriskfactor_monchgsip",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "growth",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_fa_nlvolcap",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "price",
+        "form": "volume",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 98.59,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_2_managementqualityfactor_netdebt",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "profitability",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "pcr_vol_90",
+        "dataset": "Options Analytics",
+        "data_type": "MATRIX",
+        "theme": "risk_volatility",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 98.1,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_valueanalystmodelqva_alertrank",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "value",
+        "form": "score",
+        "cadence": "slow",
+        "direction_prior": "negative",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_opricemomentumfactor_visiratio",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "analyst_revision",
+        "form": "ratio",
+        "cadence": "medium",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          20,
+          63,
+          126
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_2earningmomentumfactor400_surp",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "earnings_dispersion",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 92.4,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_2si_av_amv",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "growth",
+        "form": "score",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 99.65,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_400_visiratio",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "price",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 97.11999999999999,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_vra_qva_earnquality",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "profitability",
+        "form": "score",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "pcr_vol_all",
+        "dataset": "Options Analytics",
+        "data_type": "MATRIX",
+        "theme": "risk_volatility",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 98.1,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_liquidityriskfactor_nlmktcap",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "value",
+        "form": "score",
+        "cadence": "slow",
+        "direction_prior": "negative",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_2liquidityriskfactor_milliq",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "analyst_revision",
+        "form": "ratio",
+        "cadence": "medium",
+        "direction_prior": "negative",
+        "horizon_prior": [
+          20,
+          63,
+          126
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_earningmomentumfactor_surp",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "earnings_dispersion",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 92.4,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_2liquidityriskfactor_monchgsip",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "growth",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 99.31,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "news_vol_stddev",
+        "dataset": "US News Data",
+        "data_type": "MATRIX",
+        "theme": "price",
+        "form": "dispersion",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 96.72,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl177_2_managementqualityfactor_roa",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "profitability",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "pcr_vol_60",
+        "dataset": "Options Analytics",
+        "data_type": "MATRIX",
+        "theme": "risk_volatility",
+        "form": "ratio",
+        "cadence": "fast",
+        "direction_prior": "ambiguous",
+        "horizon_prior": [
+          5,
+          20,
+          63
+        ],
+        "coverage": 98.1,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      },
+      {
+        "name": "mdl77_valueanalystmodelqva_earnval",
+        "dataset": "Analysts' Factor Model",
+        "data_type": "MATRIX",
+        "theme": "value",
+        "form": "ratio",
+        "cadence": "slow",
+        "direction_prior": "negative",
+        "horizon_prior": [
+          126,
+          252,
+          504,
+          756
+        ],
+        "coverage": 100.0,
+        "local_uses": 0,
+        "profile_confidence": 0.95
+      }
+    ],
+    "represented_themes": [
+      "analyst_revision",
+      "earnings_dispersion",
+      "growth",
+      "price",
+      "profitability",
+      "quality",
+      "risk_volatility",
+      "value"
+    ],
+    "failure_ledger": [
+      {
+        "origin": "simulation",
+        "family": "value_cashflow_multihorizon",
+        "failure_modes": [
+          "brain_check_failed",
+          "low_fitness",
+          "low_turnover",
+          "high_self_correlation"
+        ],
+        "count": 1,
+        "latest_at": "2026-09-04T16:14:11.483782+00:00",
+        "fields": [
+          "mdl177_2_deepvaluefactor_ttmcfp"
+        ],
+        "operator_shape": [
+          "group_rank",
+          "hump",
+          "normalize",
+          "reverse",
+          "ts_rank"
+        ],
+        "failed_checks": [
+          "LOW_FITNESS",
+          "LOW_SUB_UNIVERSE_SHARPE",
+          "LOW_TURNOVER"
+        ],
+        "mutations": [
+          "ablation:remove_252_sleeve"
+        ],
+        "metrics": {
+          "sharpe": {
+            "best": 1.33,
+            "worst": 1.33,
+            "latest": 1.33
+          },
+          "fitness": {
+            "best": 0.86,
+            "worst": 0.86,
+            "latest": 0.86
+          },
+          "turnover": {
+            "best": 0.0066,
+            "worst": 0.0066,
+            "latest": 0.0066
+          },
+          "self_correlation": {
+            "best": 0.8296,
+            "worst": 0.8296,
+            "latest": 0.8296
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Không quét dày trọng số hoặc cửa sổ; giữ tối đa một biến thể chẩn đoán rồi đổi cơ chế hoặc trường dữ liệu."
+      },
+      {
+        "origin": "simulation",
+        "family": "low_idiosyncratic_risk",
+        "failure_modes": [
+          "brain_check_failed",
+          "negative_sharpe",
+          "low_fitness"
+        ],
+        "count": 1,
+        "latest_at": "2026-09-04T16:48:15.444014+00:00",
+        "fields": [
+          "unsystematic_risk_last_30_days"
+        ],
+        "operator_shape": [
+          "group_rank",
+          "normalize",
+          "reverse",
+          "ts_rank"
+        ],
+        "failed_checks": [
+          "CONCENTRATED_WEIGHT",
+          "LOW_FITNESS",
+          "LOW_SHARPE"
+        ],
+        "mutations": [],
+        "metrics": {
+          "sharpe": {
+            "best": -0.67,
+            "worst": -0.67,
+            "latest": -0.67
+          },
+          "fitness": {
+            "best": -0.27,
+            "worst": -0.27,
+            "latest": -0.27
+          },
+          "turnover": {
+            "best": 0.2454,
+            "worst": 0.2454,
+            "latest": 0.2454
+          },
+          "self_correlation": {
+            "best": null,
+            "worst": null,
+            "latest": null
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Chỉ cho phép một phép đảo chiều chẩn đoán; nếu vẫn yếu thì chuyển sang cơ chế khác."
+      },
+      {
+        "origin": "simulation",
+        "family": "quality_profitability_persistence",
+        "failure_modes": [
+          "brain_check_failed",
+          "missing_metrics",
+          "low_turnover"
+        ],
+        "count": 1,
+        "latest_at": "2026-09-04T16:46:36.572070+00:00",
+        "fields": [
+          "gross_profit_to_assets_ratio"
+        ],
+        "operator_shape": [
+          "group_rank",
+          "normalize",
+          "ts_rank"
+        ],
+        "failed_checks": [
+          "LOW_FITNESS",
+          "LOW_SHARPE",
+          "LOW_TURNOVER"
+        ],
+        "mutations": [],
+        "metrics": {
+          "sharpe": {
+            "best": 0.0,
+            "worst": 0.0,
+            "latest": 0.0
+          },
+          "fitness": {
+            "best": null,
+            "worst": null,
+            "latest": null
+          },
+          "turnover": {
+            "best": 0.0,
+            "worst": 0.0,
+            "latest": 0.0
+          },
+          "self_correlation": {
+            "best": null,
+            "worst": null,
+            "latest": null
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Chưa có đủ bằng chứng định lượng; không dùng nhánh này làm cha cho biến thể mới."
+      },
+      {
+        "origin": "simulation",
+        "family": "analyst_revision_acceleration",
+        "failure_modes": [
+          "brain_check_failed",
+          "negative_sharpe",
+          "low_fitness"
+        ],
+        "count": 1,
+        "latest_at": "2026-09-04T16:44:44.695186+00:00",
+        "fields": [
+          "mdl177_2_earningmomentumfactor400_rev3y1"
+        ],
+        "operator_shape": [
+          "group_rank",
+          "normalize",
+          "ts_zscore"
+        ],
+        "failed_checks": [
+          "LOW_FITNESS",
+          "LOW_SHARPE",
+          "LOW_SUB_UNIVERSE_SHARPE"
+        ],
+        "mutations": [],
+        "metrics": {
+          "sharpe": {
+            "best": -0.12,
+            "worst": -0.12,
+            "latest": -0.12
+          },
+          "fitness": {
+            "best": -0.03,
+            "worst": -0.03,
+            "latest": -0.03
+          },
+          "turnover": {
+            "best": 0.0739,
+            "worst": 0.0739,
+            "latest": 0.0739
+          },
+          "self_correlation": {
+            "best": null,
+            "worst": null,
+            "latest": null
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Chỉ cho phép một phép đảo chiều chẩn đoán; nếu vẫn yếu thì chuyển sang cơ chế khác."
+      },
+      {
+        "origin": "simulation",
+        "family": "value_cashflow_multihorizon",
+        "failure_modes": [
+          "brain_check_failed",
+          "low_fitness",
+          "high_self_correlation"
+        ],
+        "count": 6,
+        "latest_at": "2026-09-04T16:24:59.701201+00:00",
+        "fields": [
+          "mdl177_2_deepvaluefactor_ttmcfp"
+        ],
+        "operator_shape": [
+          "add",
+          "group_rank",
+          "hump",
+          "multiply",
+          "normalize",
+          "reverse",
+          "ts_rank"
+        ],
+        "failed_checks": [
+          "LOW_FITNESS"
+        ],
+        "mutations": [
+          "sensitivity:hump_0005",
+          "sensitivity:hump_002",
+          "sensitivity:long_window_756"
+        ],
+        "metrics": {
+          "sharpe": {
+            "best": 1.43,
+            "worst": 1.26,
+            "latest": 1.43
+          },
+          "fitness": {
+            "best": 0.98,
+            "worst": 0.88,
+            "latest": 0.98
+          },
+          "turnover": {
+            "best": 0.0458,
+            "worst": 0.0176,
+            "latest": 0.028
+          },
+          "self_correlation": {
+            "best": 0.9415,
+            "worst": 0.9069,
+            "latest": 0.9415
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Không quét dày trọng số hoặc cửa sổ; giữ tối đa một biến thể chẩn đoán rồi đổi cơ chế hoặc trường dữ liệu."
+      },
+      {
+        "origin": "simulation",
+        "family": "value_revision_confirmation",
+        "failure_modes": [
+          "brain_check_failed",
+          "low_fitness"
+        ],
+        "count": 1,
+        "latest_at": "2026-09-04T16:51:49.258683+00:00",
+        "fields": [
+          "mdl177_2_deepvaluefactor_ttmcfp",
+          "mdl177_2_earningmomentumfactor400_rev3y1"
+        ],
+        "operator_shape": [
+          "add",
+          "group_rank",
+          "hump",
+          "multiply",
+          "normalize",
+          "reverse",
+          "ts_rank",
+          "ts_zscore"
+        ],
+        "failed_checks": [
+          "LOW_FITNESS",
+          "LOW_SHARPE",
+          "LOW_SUB_UNIVERSE_SHARPE"
+        ],
+        "mutations": [
+          "evidence:replace_weak_252_value_sleeve_with_revision"
+        ],
+        "metrics": {
+          "sharpe": {
+            "best": 0.86,
+            "worst": 0.86,
+            "latest": 0.86
+          },
+          "fitness": {
+            "best": 0.5,
+            "worst": 0.5,
+            "latest": 0.5
+          },
+          "turnover": {
+            "best": 0.036,
+            "worst": 0.036,
+            "latest": 0.036
+          },
+          "self_correlation": {
+            "best": null,
+            "worst": null,
+            "latest": null
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Không quét dày trọng số hoặc cửa sổ; giữ tối đa một biến thể chẩn đoán rồi đổi cơ chế hoặc trường dữ liệu."
+      },
+      {
+        "origin": "simulation",
+        "family": "revision_quality_confirmation",
+        "failure_modes": [
+          "brain_check_failed",
+          "low_fitness"
+        ],
+        "count": 1,
+        "latest_at": "2026-09-04T16:50:10.170469+00:00",
+        "fields": [
+          "gross_profit_to_assets_ratio",
+          "mdl177_2_earningmomentumfactor400_rev3y1"
+        ],
+        "operator_shape": [
+          "add",
+          "group_rank",
+          "multiply",
+          "normalize",
+          "ts_rank",
+          "ts_zscore"
+        ],
+        "failed_checks": [
+          "LOW_FITNESS",
+          "LOW_SHARPE",
+          "LOW_SUB_UNIVERSE_SHARPE"
+        ],
+        "mutations": [],
+        "metrics": {
+          "sharpe": {
+            "best": 0.36,
+            "worst": 0.36,
+            "latest": 0.36
+          },
+          "fitness": {
+            "best": 0.15,
+            "worst": 0.15,
+            "latest": 0.15
+          },
+          "turnover": {
+            "best": 0.0698,
+            "worst": 0.0698,
+            "latest": 0.0698
+          },
+          "self_correlation": {
+            "best": null,
+            "worst": null,
+            "latest": null
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Không quét dày trọng số hoặc cửa sổ; giữ tối đa một biến thể chẩn đoán rồi đổi cơ chế hoặc trường dữ liệu."
+      },
+      {
+        "origin": "simulation",
+        "family": "value_cashflow_multihorizon",
+        "failure_modes": [
+          "brain_check_failed",
+          "low_fitness"
+        ],
+        "count": 1,
+        "latest_at": "2026-09-04T16:16:08.527509+00:00",
+        "fields": [
+          "mdl177_2_deepvaluefactor_ttmcfp"
+        ],
+        "operator_shape": [
+          "group_rank",
+          "normalize",
+          "reverse",
+          "ts_rank"
+        ],
+        "failed_checks": [
+          "LOW_FITNESS",
+          "LOW_SHARPE"
+        ],
+        "mutations": [
+          "ablation:remove_504_sleeve"
+        ],
+        "metrics": {
+          "sharpe": {
+            "best": 0.61,
+            "worst": 0.61,
+            "latest": 0.61
+          },
+          "fitness": {
+            "best": 0.31,
+            "worst": 0.31,
+            "latest": 0.31
+          },
+          "turnover": {
+            "best": 0.076,
+            "worst": 0.076,
+            "latest": 0.076
+          },
+          "self_correlation": {
+            "best": 0.5163,
+            "worst": 0.5163,
+            "latest": 0.5163
+          }
+        },
+        "lesson": "Xem điều kiện kiểm tra thất bại trước khi tinh chỉnh tham số; không dùng điểm tổng hợp để che lỗi điều kiện. Không quét dày trọng số hoặc cửa sổ; giữ tối đa một biến thể chẩn đoán rồi đổi cơ chế hoặc trường dữ liệu."
+      }
+    ],
+    "research_directives": {
+      "cycle_quotas": {
+        "new_hypotheses": 6,
+        "targeted_refinement": 3,
+        "diversity_or_robustness": 3
+      },
+      "diversity_parents": [],
+      "refinement_parents": [],
+      "stopped_families": [],
+      "existing_family_names": [
+        "value_cashflow_multihorizon"
+      ]
+    },
+    "rules": [
+      "Hypothesis before formula: do not emit FASTEXPR or operator names.",
+      "Prefer underused fields/themes when the mechanism is defensible.",
+      "A high-correlation parent requires a different field or economic mechanism, not a window/weight tweak.",
+      "One hypothesis uses one core economic mechanism and must include a falsifier.",
+      "Field names must be copied exactly from candidate_fields."
+    ]
+  },
+  "audit": {
+    "candidate_field_count": 36,
+    "theme_counts": {
+      "analyst_revision": 5,
+      "earnings_dispersion": 5,
+      "growth": 5,
+      "price": 5,
+      "profitability": 5,
+      "quality": 1,
+      "risk_volatility": 5,
+      "value": 5
+    },
+    "dataset_counts": {
+      "Analysts' Factor Model": 29,
+      "Options Analytics": 5,
+      "US News Data": 2
+    },
+    "forbidden_formula_keys": [],
+    "contains_formula_surface": false
+  }
+}

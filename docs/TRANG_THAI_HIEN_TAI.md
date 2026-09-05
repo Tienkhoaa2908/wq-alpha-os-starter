@@ -2,9 +2,9 @@
 
 > Tệp này được tạo bởi `alpha-os snapshot`. Không chỉnh số liệu thủ công; hãy cập nhật từ SQLite rồi commit/push.
 
-- Thời điểm: `2026-09-05T15:24:28.322150+00:00`
+- Thời điểm: `2026-09-05T15:36:42.641759+00:00`
 - Branch: `alpha-research-v2`
-- Commit: `d93a092cee71ab4a0b151ce179cb4b192cb9a844`
+- Commit: `2df62e768dc83aea90c005a83f6c482d794b3e15`
 
 ## Danh mục và tri thức
 
@@ -33,7 +33,7 @@ Legacy policy: giữ lại record cũ để truy vết, nhưng không cho chúng
 - Family: `value_cashflow_multihorizon`
 - Sharpe: **1.43**; Fitness: **0.98**; Turnover: **0.028**
 - Self-correlation: **0.9415**
-- Annual: `{"min_sharpe": null, "positive_sharpe_years": 0, "years": 0}`
+- Annual: `{"min_sharpe": 0.59, "positive_sharpe_years": 5, "years": 5}`
 
 ```text
 normalize(add(multiply(0.75, hump(reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 756), industry)), hump=0.01)), multiply(0.25, reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 252), industry))), filter=true), useStd=true, limit=3)

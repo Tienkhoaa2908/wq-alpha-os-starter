@@ -7,13 +7,12 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import math
-import re
 import sqlite3
 from typing import Any
 
 from ..db import json_dumps, utc_now
 from ..dsl.fingerprint import fingerprint
-from ..dsl.nodes import Call, Number, render, walk
+from ..dsl.nodes import Binary, Call, Identifier, Node, Number, String, Unary, render, walk
 from ..dsl.parser import parse
 from .field_profiles import stored_profile
 from .operator_kb import SEMANTICS
@@ -52,11 +51,35 @@ def _number_bucket(raw: str) -> str:
     return "VERY_SLOW_HORIZON"
 
 
+def _normalized_node(node: Node) -> str:
+    if isinstance(node, Number):
+        return _number_bucket(node.raw)
+    if isinstance(node, Identifier):
+        return node.name.lower()
+    if isinstance(node, String):
+        return "STR"
+    if isinstance(node, Unary):
+        return f"{node.operator}{_normalized_node(node.operand)}"
+    if isinstance(node, Binary):
+        left = _normalized_node(node.left)
+        right = _normalized_node(node.right)
+        if node.operator in {"+", "*", "==", "!="} and right < left:
+            left, right = right, left
+        return f"({left}{node.operator}{right})"
+    if isinstance(node, Call):
+        name = node.name.lower()
+        args = [_normalized_node(item) for item in node.args]
+        if name in {"add", "multiply", "max", "min"}:
+            args.sort()
+        kwargs = [f"{key.lower()}={_normalized_node(value)}" for key, value in sorted(node.kwargs, key=lambda item: item[0].lower())]
+        return f"{name}({','.join(args + kwargs)})"
+    raise TypeError(f"Unsupported node type: {type(node)!r}")
+
+
 def _parameter_normalized(expression: str) -> str:
-    # Canonical expression first, then bucket numeric literals.  This is a
-    # novelty fingerprint, not a compiler, so coarse buckets are intentional.
-    canonical = fingerprint(expression).canonical
-    return re.sub(r"(?<![A-Za-z_])[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?", lambda m: _number_bucket(m.group(0)), canonical)
+    # AST-aware normalization prevents digits inside field identifiers such as
+    # mdl177_2 from being mistaken for tunable constants.
+    return _normalized_node(parse(expression))
 
 
 @dataclass(frozen=True)
@@ -118,7 +141,7 @@ def novelty_diagnostics(connection: sqlite3.Connection, motif: MotifFingerprint)
         subtree_counts.append(int(row[0]) if row else 0)
     max_subtree = max(subtree_counts, default=0)
     # A soft score: frequent motifs/subtrees reduce novelty but never ban a
-    # profitable research motif.  Semantic duplicates are handled separately.
+    # profitable research motif. Semantic similarity is context, not a hard ban.
     penalty = 0.42 * math.log1p(role_count) + 0.38 * math.log1p(max_subtree) + 0.20 * math.log1p(parameter_count)
     novelty = round(max(0.0, 1.0 / (1.0 + penalty)), 6)
     return {

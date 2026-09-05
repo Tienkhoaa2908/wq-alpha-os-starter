@@ -185,7 +185,24 @@ def _matches(profile: FieldProfile, template: PathTemplate) -> bool:
         return False
     theme_ok = not template.preferred_themes or profile.economic_theme in template.preferred_themes
     form_ok = not template.preferred_forms or profile.semantic_form in template.preferred_forms
-    return theme_ok and form_ok
+    if not (theme_ok and form_ok):
+        return False
+
+    # Some motifs require more than a theme/form match.  In particular,
+    # information staleness is only meaningful when an unchanged value really
+    # reflects an update process.  Medium/fast continuously recomputed scores
+    # can satisfy the old theme/form gate while making days_from_last_change a
+    # meaningless near-daily clock.
+    if template.id == "information_staleness":
+        return (
+            profile.update_cadence in {"slow", "event"}
+            or profile.sparsity_class in {"slow_stepwise", "event_sparse"}
+        )
+
+    if template.id in {"vector_event_intensity", "vector_event_novelty"}:
+        return profile.update_cadence in {"event", "fast"}
+
+    return True
 
 
 def _pair_compatible(profiles: list[FieldProfile], template: PathTemplate) -> bool:

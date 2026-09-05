@@ -1,76 +1,83 @@
-# Trang thai hien tai
+# Trạng thái hiện tại
 
-```yaml
-snapshot_time: "2026-09-05T20:27:35+07:00"
-commit_at_snapshot: "87a4f04 Initial project structure"
-database: "data/db/alpha_lab.sqlite"
-configuration:
-  instrument_type: EQUITY
-  region: USA
-  universe: TOP3000
-  delay: 1
-  decay: 6
-  neutralization: INDUSTRY
-  truncation: 0.01
-  pasteurization: ON
-  nan_handling: OFF
-  unit_handling: VERIFY
-  promotion_min_sharpe: 1.25
-  promotion_min_fitness: 1.0
-  promotion_max_self_correlation: 0.7
-catalog:
-  datasets: 16
-  fields: 7642
-  operators: 127
-research:
-  hypothesis_cards: 0
-  candidates: 14
-  candidates_validated: 1
-simulations:
-  submitted: 14
-  completed: 13
-  failed: 1
-  pending: 0
-promotion:
-  promoted: 0
-best_alpha:
-  expression: "normalize(add(multiply(0.75, hump(reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 756), industry)), hump=0.01)), multiply(0.25, reverse(group_rank(ts_rank(mdl177_2_deepvaluefactor_ttmcfp, 252), industry))), filter=true), useStd=true, limit=3)"
-  family: value_cashflow_multihorizon
-  sharpe: 1.43
-  fitness: 0.98
-  turnover: 0.028
-  self_correlation: 0.9415
-  annual_stability: "5 nam co Sharpe duong; nam thap nhat 0.59"
-  not_promoted_reason: "Fitness duoi 1.0; tuong quan tu than 0.9415 vuot nguong 0.7 va phep kiem tra tuong quan dang cho"
-families_tried:
-  - value_cashflow_multihorizon
-  - analyst_revision_acceleration
-  - quality_profitability_persistence
-  - low_idiosyncratic_risk
-  - revision_quality_confirmation
-  - value_revision_confirmation
-families_frozen:
-  - analyst_revision_acceleration
-  - quality_profitability_persistence
-  - low_idiosyncratic_risk
-  - revision_quality_confirmation
-  - value_revision_confirmation
-lessons_confirmed:
-  - "value_cashflow_multihorizon la nhom co ket qua tot nhat hien tai"
-  - "Sharpe dat nhung Fitness va tuong quan tu than van co the chan day alpha"
-  - "Cac bien the cung mot tin hieu co tuong quan cao; can doi truong hoac co che"
-  - "13/14 lan mo phong hoan tat; mot lan loi can duoc giu lam nhat ky"
-known_defects:
-  - "DA_GIAI_QUYET: so 127 da duoc tach thanh 66 BRAIN active; 61 SPECS chi la typed registry va khong con duoc cong vao catalog count"
-  - "Chua co hypothesis card moi tu luong tac tu Gemini"
-  - "Chua co alpha duoc promoted"
-  - "Kiem tra tuong quan tu than cua alpha tot nhat dang pending"
-  - "Du lieu legacy trong SQLite chua tach hoan toan khoi thong ke nghien cuu"
-next_agreed_work:
-  - "Cho phep va chay agent discover/design bang Gemini khi nguoi dung yeu cau"
-  - "Bat buoc tao gia thuyet moi truoc khi viet cong thuc"
-  - "Mo phong lo nho, loc Fitness >= 1.0 va self-correlation <= 0.7"
-  - "Khong tu dong nop; chi xuat duong dan de nguoi dung bam mo phong"
+> Snapshot phối hợp tạm thời từ lần chạy cục bộ gần nhất. Sau khi pull branch mới, chạy `scripts/finalize_task.ps1` để tệp này được tạo lại trực tiếp từ SQLite.
+
+- Branch làm việc: `alpha-research-v2`
+- Test cục bộ gần nhất: **47/47 đạt**.
+- Knowledge build cục bộ gần nhất trước khi áp dụng legacy quarantine:
+  - 66/66 operator đã có semantic profile;
+  - 7.642/7.642 field đã có field profile;
+  - 14 path template;
+  - 1.281 motif đã từng được materialize;
+  - 13 simulation hoàn tất tạo 8 empirical context.
+
+## Catalog
+
+- Dataset: **16**
+- Field: **7.642**
+- BRAIN operator active duy nhất: **66**
+
+## Artifact
+
+- Tổng artifact vật lý trong SQLite: **1.281**
+- `legacy_unverified`: **1.267**
+- `tested`: **13**
+- `validated`: **1**
+
+1.267 `legacy_unverified` là output hàng loạt của generator Gemini cũ và không được xem là research evidence v2.
+
+Code hiện tại trên branch đã đổi policy thành:
+
+```text
+legacy_unverified
+→ giữ record để truy vết
+→ loại khỏi novelty
+→ loại khỏi subtree frequency
+→ loại khỏi empirical motif memory
+→ không dùng cho scheduler/trial evidence
 ```
 
-Nguon: truy van truc tiep SQLite cuc bo tai thoi diem snapshot. Khong luu thong tin dang nhap, khoa truy cap, phan hoi API thô, hoac PnL theo ma chung khoan.
+Sau khi máy cục bộ pull branch mới và chạy lại `alpha-os knowledge build`, motif memory phải được rebuild chỉ từ artifact nghiên cứu hợp lệ. Với trạng thái hiện tại, kỳ vọng khoảng **14 artifact** được materialize thay vì 1.281; con số chính xác phải lấy từ lần chạy cục bộ sau pull.
+
+## Simulation
+
+- Đã gửi: **14**
+- Hoàn tất: **13**
+- Lỗi: **1**
+- Promoted: **0**
+
+## Alpha tốt nhất lịch sử
+
+- Family: `value_cashflow_multihorizon`
+- Sharpe: **1.43**
+- Fitness: **0.98**
+- Turnover: **0.028**
+- Self-correlation: **0.9415**
+
+Kết luận nghiên cứu: core signal có sức mạnh nhưng diversity quá thấp. Scheduler v2 phải `BRANCH_SEMANTIC`, không tiếp tục đổi window/weight lân cận.
+
+## Tiến độ research v2
+
+Đã có:
+
+- active BRAIN operator registry;
+- Operator Knowledge Base cho 66 operator;
+- Field Profiler cho 7.642 field;
+- 14 path template;
+- AlphaPlan + deterministic compiler;
+- semantic validator;
+- exact/structural/motif/semantic/parameter/subtree fingerprints;
+- empirical motif memory;
+- scheduler theo failure mode;
+- multi-objective scoring;
+- state snapshot exporter;
+- `scripts/finalize_task.ps1` để test → rebuild → snapshot → commit → push.
+
+## Cổng tiếp theo
+
+1. Pull branch `alpha-research-v2` mới nhất.
+2. Chạy lại test.
+3. Chạy `alpha-os knowledge build` để loại 1.267 legacy khỏi motif memory.
+4. Chạy `scripts/finalize_task.ps1` để snapshot sạch được push lên GitHub.
+5. Audit phân phối semantic của 7.642 field và `agent packet --count 6`.
+6. Chưa simulate batch mới cho tới khi audit trên đạt.

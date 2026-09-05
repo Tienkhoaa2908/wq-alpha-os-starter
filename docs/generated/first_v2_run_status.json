@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-09-05T16:25:17.456931+00:00",
+  "brain_simulations_sent": 0,
+  "status": "failed",
+  "stage": "first_cycle",
+  "requested_hypotheses": 6,
+  "error_type": "ProviderError",
+  "error": "Không tìm thấy mô hình Gemini (HTTP 404). Kiểm tra GEMINI_MODEL.",
+  "traceback_tail": [
+    "wq_alpha_os.providers.base.ProviderError: Không tìm thấy mô hình Gemini (HTTP 404). Kiểm tra GEMINI_MODEL.\n"
+  ],
+  "ready_for_first_simulation": false
+}

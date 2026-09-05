@@ -18,10 +18,10 @@ from .research.prompts import build_prompt
 from .research.proposer import ingest_proposals, parse_response, propose, write_prompt_packet
 from .research.reviewer import review_pending
 from .research.seeds import seed_family
-from .research.agentic import design as agent_design
-from .research.agentic import discover as agent_discover
-from .research.agentic import packet as agent_packet
-from .research.agentic import run_cycle as agent_run_cycle
+from .research.agentic_v2 import design as agent_design
+from .research.agentic_v2 import discover as agent_discover
+from .research.agentic_v2 import packet as agent_packet
+from .research.agentic_v2 import run_cycle as agent_run_cycle
 
 
 def _print(value: Any) -> None:
@@ -142,12 +142,21 @@ def cmd_status(_: argparse.Namespace) -> None:
 
     initialize()
     with session() as connection:
-        tables = ("datasets", "fields", "operators", "hypotheses", "hypothesis_cards", "alpha_artifacts", "rejected_candidates", "simulation_runs", "reviews")
+        tables = (
+            "datasets", "fields", "operators", "operator_profiles", "field_profiles", "path_template_registry",
+            "hypotheses", "hypothesis_cards", "alpha_plans", "alpha_artifacts", "artifact_motifs",
+            "rejected_candidates", "simulation_runs", "reviews", "motif_stats",
+        )
         counts = {name: connection.execute(f"SELECT count(*) FROM {name}").fetchone()[0] for name in tables}
         counts["operators"] = active_brain_operator_count(connection)
         statuses = {row[0]: row[1] for row in connection.execute("SELECT status,count(*) FROM alpha_artifacts GROUP BY status")}
         families = [dict(row) for row in connection.execute(
-            "SELECT family,completed_runs,total_reward,best_reward,last_artifact_id FROM family_stats ORDER BY best_reward DESC"
+            """SELECT f.family,f.completed_runs,f.total_reward,f.best_reward,f.last_artifact_id,
+                      coalesce(t.effective_trial_count,0) effective_trial_count,
+                      coalesce(t.parameter_only_trials,0) parameter_only_trials,
+                      coalesce(t.stopped,0) stopped,t.stop_reason
+               FROM family_stats f LEFT JOIN family_trial_stats t ON t.family=f.family
+               ORDER BY f.best_reward DESC"""
         )]
     _print({"counts": counts, "artifact_statuses": statuses, "family_stats": families})
 
@@ -173,6 +182,52 @@ def cmd_agent(args: argparse.Namespace) -> None:
             result = agent_design(connection, args.limit, per_card=args.per_card)
         else:
             result = agent_run_cycle(connection, args.count, per_card=args.per_card)
+    _print(result)
+
+
+def cmd_knowledge(args: argparse.Namespace) -> None:
+    from .research.knowledge_base import rebuild_all
+    from .research.operator_kb import assert_semantic_coverage
+
+    initialize()
+    with session() as connection:
+        if args.knowledge_command == "build":
+            result = rebuild_all(connection)
+        elif args.knowledge_command == "operators":
+            result = {
+                "coverage": assert_semantic_coverage(connection),
+                "rows": [dict(row) for row in connection.execute(
+                    "SELECT * FROM operator_profiles WHERE active=1 ORDER BY operator_name LIMIT ?", (args.limit,)
+                )],
+            }
+        elif args.knowledge_command == "fields":
+            result = [dict(row) for row in connection.execute(
+                "SELECT * FROM field_profiles ORDER BY confidence DESC,name LIMIT ?", (args.limit,)
+            )]
+        else:
+            result = [dict(row) for row in connection.execute(
+                "SELECT * FROM motif_stats ORDER BY completed_runs DESC,pass_rate DESC LIMIT ?", (args.limit,)
+            )]
+    _print(result)
+
+
+def cmd_research(args: argparse.Namespace) -> None:
+    from .research.scheduler import controlled_cycle_plan, diagnose_run
+
+    initialize()
+    with session() as connection:
+        if args.research_command == "cycle-plan":
+            result = controlled_cycle_plan(connection, args.budget)
+        else:
+            rows = connection.execute(
+                """SELECT a.id artifact_id,a.family,a.expression,r.* FROM alpha_artifacts a
+                   JOIN simulation_runs r ON r.artifact_id=a.id
+                   ORDER BY coalesce(r.finished_at,r.started_at) DESC LIMIT ?""", (args.limit,)
+            ).fetchall()
+            result = [
+                {"artifact_id": row["artifact_id"], "family": row["family"], **diagnose_run(row).to_dict()}
+                for row in rows
+            ]
     _print(result)
 
 
@@ -209,7 +264,7 @@ def parser() -> argparse.ArgumentParser:
     item.add_argument("--count", type=int, default=8)
     item.add_argument("--output")
     item.set_defaults(func=cmd_prompt)
-    item = sub.add_parser("propose", help="Gọi mô hình sinh alpha theo cấu hình")
+    item = sub.add_parser("propose", help="Gọi mô hình sinh alpha theo cấu hình cũ")
     item.add_argument("--count", type=int, default=8)
     item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"),
                       help="Ghi đè ALPHA_LLM_PROVIDER trong .env cho lần chạy này")
@@ -238,13 +293,13 @@ def parser() -> argparse.ArgumentParser:
     item.set_defaults(func=cmd_export)
     item = sub.add_parser("status", help="Xem trạng thái kho nghiên cứu")
     item.set_defaults(func=cmd_status)
-    item = sub.add_parser("run", help="Chạy một vòng sinh, mô phỏng và đánh giá")
+    item = sub.add_parser("run", help="Chạy vòng cũ sinh, mô phỏng và đánh giá")
     item.add_argument("--budget", type=int, default=8)
     item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"),
                       help="Ghi đè ALPHA_LLM_PROVIDER trong .env cho lần chạy này")
     item.set_defaults(func=cmd_run)
 
-    item = sub.add_parser("agent", help="Tác nhân Gemini sinh giả thuyết và thiết kế alpha")
+    item = sub.add_parser("agent", help="Tác nhân v2: giả thuyết -> AlphaPlan -> biên dịch cục bộ")
     child = item.add_subparsers(dest="agent_command", required=True)
     child_packet = child.add_parser("packet", help="Xuất gói khám phá, không gọi Gemini")
     child_packet.add_argument("--count", type=int, default=4)
@@ -252,14 +307,37 @@ def parser() -> argparse.ArgumentParser:
     child_discover = child.add_parser("discover", help="Gọi Gemini để sinh thẻ giả thuyết, chưa sinh alpha")
     child_discover.add_argument("--count", type=int, default=4)
     child_discover.set_defaults(func=cmd_agent)
-    child_design = child.add_parser("design", help="Thiết kế và phản biện alpha từ thẻ đã lưu")
+    child_design = child.add_parser("design", help="Gemini chỉ chọn AlphaPlan; code tự biên dịch FASTEXPR")
     child_design.add_argument("--limit", type=int, default=4)
     child_design.add_argument("--per-card", type=int, default=2)
     child_design.set_defaults(func=cmd_agent)
-    child_cycle = child.add_parser("run", help="Khám phá, thiết kế, phản biện; không mô phỏng")
+    child_cycle = child.add_parser("run", help="Khám phá và thiết kế v2; không mô phỏng")
     child_cycle.add_argument("--count", type=int, default=4)
     child_cycle.add_argument("--per-card", type=int, default=2)
     child_cycle.set_defaults(func=cmd_agent)
+
+    item = sub.add_parser("knowledge", help="Cơ sở tri thức operator/field/motif")
+    child = item.add_subparsers(dest="knowledge_command", required=True)
+    child_build = child.add_parser("build", help="Vật chất hóa toàn bộ tri thức cục bộ; không gọi mạng")
+    child_build.set_defaults(func=cmd_knowledge)
+    child_ops = child.add_parser("operators", help="Xem semantic operator profiles")
+    child_ops.add_argument("--limit", type=int, default=100)
+    child_ops.set_defaults(func=cmd_knowledge)
+    child_fields = child.add_parser("fields", help="Xem semantic field profiles")
+    child_fields.add_argument("--limit", type=int, default=50)
+    child_fields.set_defaults(func=cmd_knowledge)
+    child_motifs = child.add_parser("motifs", help="Xem empirical motif statistics")
+    child_motifs.add_argument("--limit", type=int, default=50)
+    child_motifs.set_defaults(func=cmd_knowledge)
+
+    item = sub.add_parser("research", help="Lập kế hoạch nghiên cứu theo bằng chứng; không tự mô phỏng")
+    child = item.add_subparsers(dest="research_command", required=True)
+    child_cycle_plan = child.add_parser("cycle-plan", help="Chia ngân sách 50/25/25 cho vòng nghiên cứu")
+    child_cycle_plan.add_argument("--budget", type=int, default=12)
+    child_cycle_plan.set_defaults(func=cmd_research)
+    child_diag = child.add_parser("diagnose", help="Chẩn đoán failure mode của các mô phỏng gần nhất")
+    child_diag.add_argument("--limit", type=int, default=20)
+    child_diag.set_defaults(func=cmd_research)
     return root
 
 

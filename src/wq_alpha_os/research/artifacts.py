@@ -10,7 +10,12 @@ from ..config import load_defaults
 from ..db import json_dumps, utc_now
 from ..dsl.fingerprint import Fingerprint, similarity
 from ..dsl.validator import validate_expression
-from .motifs import motif_fingerprint, novelty_diagnostics, store_artifact_motif
+from .motifs import (
+    RESEARCH_EXCLUDED_STATUSES,
+    motif_fingerprint,
+    novelty_diagnostics,
+    store_artifact_motif,
+)
 from .semantic_validator import validate_semantics
 
 
@@ -23,22 +28,17 @@ class IngestResult:
 
 
 def _existing_fingerprints(connection: sqlite3.Connection) -> list[tuple[str, Fingerprint]]:
-    """Return fingerprints that are allowed to influence v2 duplicate gates.
-
-    ``legacy_unverified`` rows are provenance-only output from the old Gemini
-    bulk generator.  They are intentionally quarantined everywhere else in v2
-    and therefore must not silently block new candidates here either.
-    """
+    """Return fingerprints that are allowed to influence v2 duplicate gates."""
     rows = connection.execute(
         """SELECT id,canonical_expression,exact_hash,structural_hash,field_names_json,operator_names_json
            FROM alpha_artifacts
-           WHERE status <> 'legacy_unverified'"""
+           WHERE status NOT IN (?,?)""",
+        RESEARCH_EXCLUDED_STATUSES,
     ).fetchall()
     result = []
     for row in rows:
         fields = tuple(json.loads(row[4]))
         operators = tuple(json.loads(row[5]))
-        # The abstract structure is recalculated only when needed by parsing the canonical form.
         from ..dsl.fingerprint import fingerprint
         parsed = fingerprint(row[1], set(fields))
         result.append((row[0], Fingerprint(row[1], row[2], row[3], parsed.abstract_structure, fields, operators)))
@@ -103,11 +103,6 @@ def ingest_candidate(
     if nearest >= threshold and not controlled_test:
         return _reject(connection, expression, family, "near_duplicate", {"similarity": nearest, "nearest_id": nearest_id}, generator)
 
-    # Parameter-normalized fingerprint preserves field names while coarsening
-    # numeric constants/windows. Therefore the same field+motif with only a
-    # parameter tweak is blocked unless lineage explicitly marks a controlled
-    # diagnostic/sensitivity test. Role-motif frequency remains only a soft
-    # novelty penalty, so proven motifs can still be explored on new fields.
     motif = motif_fingerprint(connection, expression)
     novelty = novelty_diagnostics(connection, motif)
     if novelty["parameter_bucket_count"] > 0 and not controlled_test:

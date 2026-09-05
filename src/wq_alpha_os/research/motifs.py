@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-"""Multi-level novelty fingerprints for alpha research artifacts."""
+"""Multi-level novelty fingerprints for alpha research artifacts.
+
+`legacy_unverified` artifacts are historical debris only. They are retained in
+SQLite for provenance but are deliberately excluded from novelty, subtree and
+empirical research memory so old bulk Gemini generations cannot bias v2.
+"""
 
 from dataclasses import asdict, dataclass
 from decimal import Decimal, InvalidOperation
@@ -16,6 +21,9 @@ from ..dsl.nodes import Binary, Call, Identifier, Node, Number, String, Unary, r
 from ..dsl.parser import parse
 from .field_profiles import stored_profile
 from .operator_kb import SEMANTICS
+
+
+LEGACY_EXCLUDED_STATUS = "legacy_unverified"
 
 
 def _sha(text: str) -> str:
@@ -131,10 +139,23 @@ def motif_fingerprint(connection: sqlite3.Connection, expression: str) -> MotifF
     )
 
 
+def _active_motif_count(connection: sqlite3.Connection, column: str, value: str) -> int:
+    if column not in {"semantic_hash", "role_motif_hash", "parameter_hash"}:
+        raise ValueError(f"Unsupported motif column: {column}")
+    row = connection.execute(
+        f"""SELECT count(*)
+            FROM artifact_motifs m
+            JOIN alpha_artifacts a ON a.id=m.artifact_id
+            WHERE m.{column}=? AND a.status<>?""",
+        (value, LEGACY_EXCLUDED_STATUS),
+    ).fetchone()
+    return int(row[0])
+
+
 def novelty_diagnostics(connection: sqlite3.Connection, motif: MotifFingerprint) -> dict[str, Any]:
-    semantic_count = int(connection.execute("SELECT count(*) FROM artifact_motifs WHERE semantic_hash=?", (motif.semantic_hash,)).fetchone()[0])
-    role_count = int(connection.execute("SELECT count(*) FROM artifact_motifs WHERE role_motif_hash=?", (motif.role_motif_hash,)).fetchone()[0])
-    parameter_count = int(connection.execute("SELECT count(*) FROM artifact_motifs WHERE parameter_hash=?", (motif.parameter_hash,)).fetchone()[0])
+    semantic_count = _active_motif_count(connection, "semantic_hash", motif.semantic_hash)
+    role_count = _active_motif_count(connection, "role_motif_hash", motif.role_motif_hash)
+    parameter_count = _active_motif_count(connection, "parameter_hash", motif.parameter_hash)
     subtree_counts: list[int] = []
     for subtree in motif.subtree_hashes:
         row = connection.execute("SELECT artifact_count FROM subtree_stats WHERE subtree_hash=?", (subtree,)).fetchone()
@@ -154,6 +175,10 @@ def novelty_diagnostics(connection: sqlite3.Connection, motif: MotifFingerprint)
 
 
 def store_artifact_motif(connection: sqlite3.Connection, artifact_id: str, expression: str) -> dict[str, Any]:
+    status_row = connection.execute("SELECT status FROM alpha_artifacts WHERE id=?", (artifact_id,)).fetchone()
+    if status_row is not None and str(status_row[0]) == LEGACY_EXCLUDED_STATUS:
+        raise ValueError("legacy_unverified artifacts are excluded from v2 research memory")
+
     motif = motif_fingerprint(connection, expression)
     diagnostics = novelty_diagnostics(connection, motif)
     connection.execute(
@@ -179,10 +204,23 @@ def store_artifact_motif(connection: sqlite3.Connection, artifact_id: str, expre
 
 
 def backfill_motifs(connection: sqlite3.Connection) -> dict[str, int]:
+    """Rebuild derived motif memory from research-eligible artifacts only.
+
+    Motif tables are caches, not source evidence. Rebuilding them makes the
+    exclusion policy deterministic and removes any old Gemini bulk-generation
+    contamination that may already have been materialized.
+    """
+    excluded_legacy = int(connection.execute(
+        "SELECT count(*) FROM alpha_artifacts WHERE status=?", (LEGACY_EXCLUDED_STATUS,)
+    ).fetchone()[0])
+    connection.execute("DELETE FROM artifact_motifs")
+    connection.execute("DELETE FROM subtree_stats")
+
     rows = connection.execute(
-        """SELECT id,expression FROM alpha_artifacts a
-           WHERE NOT EXISTS(SELECT 1 FROM artifact_motifs m WHERE m.artifact_id=a.id)
-           ORDER BY created_at"""
+        """SELECT id,expression FROM alpha_artifacts
+           WHERE status<>?
+           ORDER BY created_at""",
+        (LEGACY_EXCLUDED_STATUS,),
     ).fetchall()
     completed = failed = 0
     for row in rows:
@@ -190,12 +228,16 @@ def backfill_motifs(connection: sqlite3.Connection) -> dict[str, int]:
             store_artifact_motif(connection, row["id"], row["expression"])
             completed += 1
         except Exception:
-            # Existing legacy expressions may be intentionally unverified.
             failed += 1
-    return {"materialized": completed, "failed": failed}
+    return {
+        "materialized": completed,
+        "failed": failed,
+        "excluded_legacy": excluded_legacy,
+    }
 
 
 __all__ = [
+    "LEGACY_EXCLUDED_STATUS",
     "MotifFingerprint",
     "backfill_motifs",
     "motif_fingerprint",

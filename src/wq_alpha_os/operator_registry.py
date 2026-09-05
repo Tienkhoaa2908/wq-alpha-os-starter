@@ -59,6 +59,11 @@ def active_brain_operator_rows(connection: sqlite3.Connection) -> list[sqlite3.R
     ).fetchall()
 
 
+def active_brain_operator_names(connection: sqlite3.Connection) -> set[str]:
+    """Return the latest active BRAIN operator names, never typed-registry extras."""
+    return {str(row[0]).strip().lower() for row in connection.execute("SELECT name FROM active_brain_operators")}
+
+
 def active_brain_operator_count(connection: sqlite3.Connection) -> int:
     return int(connection.execute("SELECT count(*) FROM active_brain_operators").fetchone()[0])
 
@@ -111,3 +116,13 @@ def audit_operator_registry(
             "active": "std" in brain_names,
         },
     }
+
+
+__all__ = [
+    "COMPARISON_OPERATOR_SYMBOLS",
+    "active_brain_operator_count",
+    "active_brain_operator_names",
+    "active_brain_operator_rows",
+    "audit_operator_registry",
+    "deduplicate_brain_operators",
+]

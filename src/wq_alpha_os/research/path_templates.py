@@ -183,8 +183,6 @@ TEMPLATE_BY_ID = {item.id: item for item in PATH_TEMPLATES}
 def _matches(profile: FieldProfile, template: PathTemplate) -> bool:
     if profile.data_type not in template.input_kinds:
         return False
-    if not template.enabled_by_default:
-        return False
     theme_ok = not template.preferred_themes or profile.economic_theme in template.preferred_themes
     form_ok = not template.preferred_forms or profile.semantic_form in template.preferred_forms
     return theme_ok or form_ok

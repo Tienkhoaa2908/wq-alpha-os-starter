@@ -2,6 +2,13 @@
 
 File nay la diem doc dau tien cho cac phien lam viec sau. Muc tieu la tiet kiem dung luong hoi thoai: doc file nay truoc, chi mo them file khac khi can sua dung phan do.
 
+## Snapshot trang thai
+
+- Ban snapshot may-doc duoc nam tai `docs/TRANG_THAI_HIEN_TAI.md`.
+- Snapshot hien tai: 16 dataset, 7642 truong, 127 toan tu, 14 ung vien, 14 lan mo phong (13 hoan tat, 1 loi), 0 promoted.
+- Alpha tot nhat hien tai co Sharpe 1.43, Fitness 0.98, turnover 0.028 va self-correlation 0.9415; chua dat nguong de promoted.
+- Moi tac nhan phai doc snapshot sau file nay truoc khi xem SQLite hoac bat dau viec moi.
+
 ## Quy tac lam viec ngan gon
 
 - Khong dan nhat ky dai, danh sach alpha lon, ket qua lai lo, hoac toan bo co so du lieu vao hoi thoai.

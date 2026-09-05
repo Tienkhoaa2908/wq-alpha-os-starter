@@ -15,7 +15,7 @@ Hệ thống nghiên cứu alpha (tín hiệu dự báo) chạy bằng dòng l�
 Yêu cầu Python (ngôn ngữ lập trình) 3.11 trở lên.
 
 ```powershell
-Set-Location 'C:\Users\welcome\OneDrive\Desktop\C++\wq-alpha-os-starter'
+Set-Location 'C:\Users\welcome\OneDrive\Desktop\wq-alpha-os-starter'
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e .
@@ -37,7 +37,7 @@ alpha-os status
 Mở `.env`, chỉ trên máy của bạn, rồi điền tối thiểu:
 
 ```dotenv
-GEMINI_API_KEY=khoa_api_rieng_cua_ban
+Đặt khóa Gemini cục bộ trong tệp `.env` bằng biến `GEMINI_API_KEY` (không đưa khóa vào Git).
 GEMINI_MODEL=gemini-2.5-pro
 ```
 
@@ -124,7 +124,7 @@ Một alpha đã có hồ sơ mô phỏng, kể cả hồ sơ lỗi hoặc hết
 Tập lệnh tự tìm đúng tệp thực thi trong `.venv`, vì vậy nên gọi từ thư mục dự án:
 
 ```powershell
-Set-Location 'C:\Users\welcome\OneDrive\Desktop\C++\wq-alpha-os-starter'
+Set-Location 'C:\Users\welcome\OneDrive\Desktop\wq-alpha-os-starter'
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\scripts\run_research.ps1 -Limit 8
 ```

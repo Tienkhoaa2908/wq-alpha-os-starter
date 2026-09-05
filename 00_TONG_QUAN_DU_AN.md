@@ -4,9 +4,9 @@
 
 ## Mục tiêu
 
-Xây một hệ thống nghiên cứu alpha có bằng chứng, trong đó LLM chỉ làm phần giả thuyết và lựa chọn ý định nghiên cứu; code cục bộ chịu trách nhiệm biên dịch biểu thức, kiểm tra kiểu/ngữ nghĩa, chống clone, mô phỏng, lưu bằng chứng và học từ kết quả.
+Xây một hệ thống nghiên cứu alpha có bằng chứng, trong đó code cục bộ chịu trách nhiệm cho phần lặp lại và quyết định có thể kiểm chứng: chọn field theo semantic profile, chọn path template, biên dịch biểu thức, kiểm tra kiểu/ngữ nghĩa, chống clone, mô phỏng, lưu bằng chứng và học từ kết quả.
 
-Không dùng mô hình cục bộ để sinh alpha. Không để LLM viết FASTEXPR trực tiếp trong luồng v2.
+LLM không còn là dependency bắt buộc. Luồng ưu tiên mới là **deterministic semantic search**: Field Profiler + Path Template + AlphaPlan compiler có thể tự sinh một breadth batch hợp lệ mà không gọi API. LLM chỉ là lớp reviewer/proposer tùy chọn ở phía trên, tuyệt đối không viết FASTEXPR trực tiếp.
 
 ## Nguồn sự thật
 
@@ -15,10 +15,13 @@ Không dùng mô hình cục bộ để sinh alpha. Không để LLM viết FAST
 - `docs/TRANG_THAI_HIEN_TAI.md`: snapshot ngắn cho người đọc.
 - `docs/generated/research_state.json`: snapshot máy đọc được để ChatGPT/Codex đọc trực tiếp trên GitHub.
 - `docs/generated/field_semantic_audit.json`: phân phối/chất lượng Field Profiler đã được rút gọn an toàn.
-- `docs/generated/agent_packet_preview.json`: đúng packet khám phá v2 sẽ đưa cho Gemini, kèm kiểm tra không có bề mặt công thức/toán tử.
+- `docs/generated/agent_packet_preview.json`: packet cho nhánh LLM tùy chọn.
+- `docs/generated/autonomous_v2_run_status.json`: trạng thái runner deterministic không LLM.
+- `docs/generated/autonomous_v2_dry_run.json`: audit 6 AlphaPlan deterministic khi runner thành công.
+- `docs/generated/first_v2_run_status.json`: trạng thái nhánh LLM cũ/tùy chọn.
 - `AGENTS.md`: quy tắc vận hành bắt buộc.
 
-Sau mỗi thay đổi có ý nghĩa phải chạy `scripts/finalize_task.ps1` để test, rebuild knowledge, xuất audit + snapshot, commit và push GitHub.
+Sau mỗi thay đổi có ý nghĩa phải chạy `scripts/finalize_task.ps1` để test, xuất audit + snapshot, commit và push GitHub.
 
 ## Trạng thái nền hiện biết
 
@@ -46,6 +49,7 @@ Chính sách v2:
 - không đưa vào subtree frequency;
 - không đưa vào empirical motif stats;
 - không dùng làm trial count hoặc scheduler evidence;
+- không dùng trong exact/near-duplicate gate;
 - không dùng để chặn alpha mới chỉ vì giống output rác cũ.
 
 `alpha-os knowledge build` rebuild motif memory chỉ từ artifact nghiên cứu hợp lệ.
@@ -64,13 +68,12 @@ BRAIN catalogue
           Field Profiler
               │
               ▼
-        Hypothesis LLM
+   deterministic semantic search
+              │
+              ├──────── optional LLM reviewer/proposer
               │
               ▼
            AlphaPlan
-              │
-              ▼
-      semantic path planner
               │
               ▼
       deterministic compiler
@@ -95,6 +98,40 @@ BRAIN catalogue
          scheduler v2
        STOP / REFINE / BRANCH
 ```
+
+## Autonomous semantic search
+
+Nguồn chính nằm ở `research/autonomous_search.py`.
+
+Breadth stage đầu tiên:
+
+- chỉ dùng field `MATRIX`/`VECTOR` đã có profile confidence >= 0.70;
+- bỏ `generic`, infrastructure và field đã dùng ở artifact nghiên cứu hiện hành;
+- chỉ lấy path template semantic-eligible;
+- breadth đầu tiên chỉ dùng single-field motif, không random pair;
+- loại `multi_horizon_consensus` khỏi novelty breadth;
+- compile FASTEXPR bằng `plans.py`;
+- chấm prior bằng confidence + coverage + motif novelty;
+- chọn đúng 6 candidate với tối thiểu 5 theme và 5 dataset;
+- chạy toàn bộ DSL/type/semantic/clone gates trước khi lưu;
+- không gọi LLM, không gọi BRAIN simulation.
+
+Một lệnh local:
+
+```powershell
+.\scripts\run_autonomous_v2_discovery.ps1
+```
+
+Runner phải sinh `autonomous_v2_run_status.json`; nếu thành công còn sinh `autonomous_v2_dry_run.json` rồi tự finalize/push GitHub.
+
+## Optional free-model stack
+
+LLM là lớp tùy chọn, không phải lõi. `providers/free_stack.py` thử các key có sẵn theo thứ tự:
+
+1. Groq: `openai/gpt-oss-120b`, sau đó `qwen/qwen3.8-27b`;
+2. OpenRouter: `inclusionai/ling-3.0-flash-fin:free`, `minimax/minimax-m2.7:free`, rồi `nvidia/nemotron-3-ultra-550b-a55b:free`.
+
+Đặt `ALPHA_LLM_PROVIDER=auto_free` và chỉ lưu `GROQ_API_KEY`/`OPENROUTER_API_KEY` trong `.env`. Nếu mọi API free chết/hết quota thì deterministic semantic search vẫn chạy được.
 
 ## Operator Knowledge Base
 
@@ -135,7 +172,7 @@ Taxonomy economic theme là một nguồn dùng chung cho profiler, field review
 
 Candidate packet v3 chỉ nhận `MATRIX`/`VECTOR`, loại `generic` và confidence dưới `0.70`, giữ mô tả tối đa 220 ký tự, áp trần 25% cho mỗi dataset và mỗi theme. Với 6 hypothesis, mục tiêu là 24 field và ít nhất 6 dataset khi catalogue cho phép.
 
-Field Profiler chưa được coi là đáng tin chỉ vì đã materialize đủ 7.642 dòng. Trước simulation mới phải đọc `field_semantic_audit.json`, đặc biệt các mẫu có rủi ro phân loại sai và các field coverage cao nhưng semantic mơ hồ. `unknown unit` đứng một mình không phải lý do gửi field đi review.
+Field Profiler chưa được coi là đáng tin chỉ vì đã materialize đủ 7.642 dòng. Trước simulation mới phải đọc `field_semantic_audit.json`, đặc biệt các mẫu có rủi ro phân loại sai và các field coverage cao nhưng semantic mơ hồ.
 
 ## 14 path template
 
@@ -167,7 +204,7 @@ Mỗi artifact có nhiều fingerprint:
 - parameter-normalized;
 - subtree.
 
-Thay window trên cùng field/cùng motif không được coi là ý tưởng mới, trừ controlled diagnostic/sensitivity có lineage rõ.
+Thay window trên cùng field/cùng motif không được coi là ý tưởng mới, trừ controlled diagnostic/sensitivity có lineage rõ. `legacy_unverified` bị loại khỏi tất cả duplicate/novelty gates của research v2.
 
 ## Empirical memory
 
@@ -200,15 +237,15 @@ Tức đổi field hoặc economic mechanism, không đổi 756 thành một win
 
 Một research cycle chuẩn có budget 12:
 
-- 6 hypothesis mới;
+- 6 breadth candidate mới;
 - 3 targeted refinement;
 - 3 diversity/robustness branch.
 
-Các BRAIN check suy ra trực tiếp từ metric không được che mất chẩn đoán tổng hợp. Trial counter được rebuild từ lịch sử hợp lệ; sensitivity/đổi tham số làm tăng chi phí thử nhưng không được tính là semantic novelty. Cycle plan phải giữ parent tốt nhất trong nhánh diversity khi cần thoát self-correlation cao.
+6 slot sau chỉ được quyết định sau khi 6 breadth simulations đầu có evidence.
 
-## Workflow phối hợp ChatGPT ↔ Codex
+## Workflow phối hợp ChatGPT web ↔ local code
 
-ChatGPT web dùng GitHub làm nguồn trạng thái chung. Codex trong VS Code có quyền đọc SQLite/evidence cục bộ và sau mỗi task phải đưa phần trạng thái an toàn lên GitHub.
+ChatGPT web dùng GitHub làm nguồn trạng thái chung và đóng vai trò supervisor/auditor. Không cố dùng ChatGPT web như một API cục bộ. Code local chịu trách nhiệm các vòng tự động.
 
 Kết thúc task bằng:
 
@@ -216,22 +253,17 @@ Kết thúc task bằng:
 .\scripts\finalize_task.ps1 -Message "<commit message>"
 ```
 
-Lệnh này phải tạo/cập nhật cả bốn tệp phối hợp sau trước khi commit/push:
-
-- `docs/TRANG_THAI_HIEN_TAI.md`
-- `docs/generated/research_state.json`
-- `docs/generated/field_semantic_audit.json`
-- `docs/generated/agent_packet_preview.json`
-
-Không được coi task là xong nếu chưa cập nhật các file điều phối phù hợp, commit và push branch hiện tại.
+Các runner tự động phải tạo file status/audit phù hợp rồi finalize để ChatGPT đọc được trên GitHub.
 
 ## Cổng tiếp theo
 
-Trước khi tiêu simulation mới:
+Ưu tiên nhánh deterministic, không chờ Gemini:
 
-1. đọc `docs/generated/field_semantic_audit.json` và kiểm tra các mẫu có rủi ro phân loại sai;
-2. đọc `docs/generated/agent_packet_preview.json` và chỉ đi tiếp khi `gate_pass=true`;
-3. kiểm tra packet có 24 field cho 6 hypothesis, đủ độ đa dạng dataset/theme và không có field generic, confidence thấp hoặc kiểu hạ tầng;
-4. chỉ review bằng Gemini một tập field mơ hồ nhưng có giá trị cao nếu thật sự cần;
-5. dry-run AlphaPlan trước;
-6. sau đó mới tiêu batch 12 simulation đầu tiên của v2.
+1. chạy `git pull origin alpha-research-v2`;
+2. chạy `.\scripts\run_autonomous_v2_discovery.ps1`;
+3. đọc `docs/generated/autonomous_v2_run_status.json`;
+4. nếu thành công, audit đúng 6 candidate trong `autonomous_v2_dry_run.json`;
+5. chỉ sau audit mới cho phép 6 BRAIN simulations breadth đầu tiên;
+6. từ 6 kết quả đó mới phân bổ 3 refinement + 3 diversity/robustness.
+
+Free LLM stack chỉ dùng như reviewer/reranker tùy chọn; nếu quota/model provider lỗi thì không được làm gián đoạn deterministic search.

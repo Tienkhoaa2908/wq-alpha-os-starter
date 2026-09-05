@@ -174,7 +174,7 @@ def cmd_run(args: argparse.Namespace) -> None:
     if args.provider:
         settings = replace(settings, llm_provider=args.provider.replace("-", "_"))
     with session() as connection:
-        _print(run_cycle(connection, args.budget, settings=settings, simulate=not args.no_simulate))
+        _print(run_cycle(connection, args.budget, settings=settings, simulate=not getattr(args, "no_simulate", False)))
 
 
 def cmd_agent(args: argparse.Namespace) -> None:

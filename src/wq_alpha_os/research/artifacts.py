@@ -12,6 +12,7 @@ from ..dsl.fingerprint import Fingerprint, similarity
 from ..dsl.validator import validate_expression
 from .motifs import (
     RESEARCH_EXCLUDED_STATUSES,
+    SCREENED_OUT_STATUS,
     motif_fingerprint,
     novelty_diagnostics,
     store_artifact_motif,
@@ -88,6 +89,32 @@ def ingest_candidate(
         return _reject(connection, expression, family, "semantic_validation_failed", semantic.to_dict(), generator)
 
     fp = report.fingerprint
+
+    # Exact hashes are globally unique in SQLite. A candidate that was only
+    # screened out during an unsimulated dry-run may legitimately be selected
+    # again after the selector is improved. Reactivate that provenance row
+    # instead of attempting an INSERT that would violate UNIQUE(exact_hash).
+    screened = connection.execute(
+        "SELECT id FROM alpha_artifacts WHERE exact_hash=? AND status=? LIMIT 1",
+        (fp.exact_hash, SCREENED_OUT_STATUS),
+    ).fetchone()
+    if screened is not None:
+        artifact_id = str(screened["id"])
+        connection.execute(
+            """UPDATE alpha_artifacts
+               SET family=?,rationale=?,generator=?,model_name=?,prompt_hash=?,prompt_version=?,
+                   validation_json=?,status='validated',parent_id=?,hypothesis_id=?,mutation=?
+               WHERE id=?""",
+            (
+                family, rationale, generator, model_name, prompt_hash, prompt_version,
+                json_dumps({"dsl": report.to_dict(), "semantic": semantic.to_dict()}),
+                parent_id, hypothesis_id, mutation, artifact_id,
+            ),
+        )
+        store_artifact_motif(connection, artifact_id, expression)
+        _record_trial(connection, family, parameter_only=False)
+        return IngestResult(True, artifact_id, "reactivated_screened", 0.0)
+
     nearest_id: str | None = None
     nearest = 0.0
     for artifact_id, other in _existing_fingerprints(connection):

@@ -10,6 +10,7 @@ from ..config import load_defaults
 from ..db import json_dumps, utc_now
 from ..dsl.fingerprint import Fingerprint, similarity
 from ..dsl.validator import validate_expression
+from .motifs import motif_fingerprint, novelty_diagnostics, store_artifact_motif
 
 
 @dataclass(frozen=True)
@@ -44,6 +45,20 @@ def _reject(connection: sqlite3.Connection, expression: str, family: str, reason
     return IngestResult(False, None, reason, float(details.get("similarity", 0)))
 
 
+def _record_trial(connection: sqlite3.Connection, family: str, *, parameter_only: bool) -> None:
+    connection.execute(
+        """INSERT INTO family_trial_stats(
+            family,effective_trial_count,semantic_branches,parameter_only_trials,stopped,stop_reason,updated_at
+        ) VALUES(?,1,?,?,0,NULL,?)
+        ON CONFLICT(family) DO UPDATE SET
+            effective_trial_count=family_trial_stats.effective_trial_count+1,
+            semantic_branches=family_trial_stats.semantic_branches+excluded.semantic_branches,
+            parameter_only_trials=family_trial_stats.parameter_only_trials+excluded.parameter_only_trials,
+            updated_at=excluded.updated_at""",
+        (family, 0 if parameter_only else 1, 1 if parameter_only else 0, utc_now()),
+    )
+
+
 def ingest_candidate(
     connection: sqlite3.Connection,
     *, expression: str, family: str, rationale: str, generator: str,
@@ -69,10 +84,24 @@ def ingest_candidate(
         return _reject(connection, expression, family, "exact_duplicate", {"similarity": nearest, "nearest_id": nearest_id}, generator)
     threshold = float(limits["near_duplicate_threshold"])
     controlled_test = bool(
-        parent_id and mutation and mutation.lower().startswith(("sensitivity:", "ablation:"))
+        parent_id and mutation and mutation.lower().startswith(("sensitivity:", "ablation:", "diagnostic:"))
     )
     if nearest >= threshold and not controlled_test:
         return _reject(connection, expression, family, "near_duplicate", {"similarity": nearest, "nearest_id": nearest_id}, generator)
+
+    # Parameter-normalized fingerprint preserves field names while coarsening
+    # numeric constants/windows.  Therefore the same field+motif with only a
+    # parameter tweak is blocked unless lineage explicitly marks a controlled
+    # diagnostic/sensitivity test.  Role-motif frequency remains only a soft
+    # novelty penalty, so proven motifs can still be explored on new fields.
+    motif = motif_fingerprint(connection, expression)
+    novelty = novelty_diagnostics(connection, motif)
+    if novelty["parameter_bucket_count"] > 0 and not controlled_test:
+        return _reject(
+            connection, expression, family, "parameter_clone",
+            {"similarity": nearest, "parameter_hash": motif.parameter_hash, "novelty": novelty}, generator,
+        )
+
     artifact_id = str(uuid.uuid4())
     connection.execute(
         """INSERT INTO alpha_artifacts VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
@@ -81,8 +110,21 @@ def ingest_candidate(
          generator, model_name, prompt_hash, prompt_version, json_dumps(report.to_dict()),
          report.node_count, report.depth, "validated", None, utc_now()),
     )
+    motif_result = store_artifact_motif(connection, artifact_id, expression)
+    _record_trial(connection, family, parameter_only=controlled_test)
     connection.execute(
         "INSERT INTO research_events(artifact_id,event_type,payload_json,created_at) VALUES(?,?,?,?)",
-        (artifact_id, "candidate_ingested", json_dumps({"family": family, "nearest_similarity": nearest}), utc_now()),
+        (
+            artifact_id, "candidate_ingested",
+            json_dumps({
+                "family": family,
+                "nearest_similarity": nearest,
+                "role_motif_hash": motif.role_motif_hash,
+                "semantic_hash": motif.semantic_hash,
+                "parameter_hash": motif.parameter_hash,
+                "novelty": motif_result["diagnostics"],
+            }),
+            utc_now(),
+        ),
     )
     return IngestResult(True, artifact_id, "accepted", nearest)

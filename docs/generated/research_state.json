@@ -1,0 +1,50 @@
+{
+  "snapshot": {
+    "source": "temporary coordination snapshot from latest local run",
+    "authoritative_after_next_finalize": true,
+    "branch": "alpha-research-v2"
+  },
+  "catalog": {
+    "datasets": 16,
+    "fields": 7642,
+    "active_brain_operators": 66,
+    "operator_profiles": 66,
+    "field_profiles": 7642,
+    "path_templates": 14
+  },
+  "research": {
+    "artifacts_total": 1281,
+    "artifact_statuses": {
+      "legacy_unverified": 1267,
+      "tested": 13,
+      "validated": 1
+    },
+    "legacy_policy": "retain for provenance; exclude from v2 novelty, subtree frequency, empirical motif memory, scheduler and trial evidence",
+    "motifs_before_legacy_quarantine_rebuild": 1281,
+    "expected_research_eligible_artifacts_after_rebuild": 14,
+    "hypothesis_cards": 0,
+    "alpha_plans": 0,
+    "empirical_contexts": 8
+  },
+  "simulations": {
+    "total": 14,
+    "completed": 13,
+    "failed": 1,
+    "promoted": 0
+  },
+  "best_alpha": {
+    "family": "value_cashflow_multihorizon",
+    "sharpe": 1.43,
+    "fitness": 0.98,
+    "turnover": 0.028,
+    "self_correlation": 0.9415,
+    "research_action": "BRANCH_SEMANTIC"
+  },
+  "next_gate": [
+    "pull latest alpha-research-v2",
+    "run full tests",
+    "rebuild knowledge with legacy quarantine",
+    "run scripts/finalize_task.ps1 so this file is regenerated from SQLite",
+    "audit field semantic distribution and agent packet before new simulations"
+  ]
+}

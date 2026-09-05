@@ -52,6 +52,10 @@ class Settings:
     llm_model: str
     llm_api_key: str
     llm_timeout_seconds: int
+    llm_provider: str = "openai_compatible"
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
+    gemini_model: str = "gemini-2.5-pro"
+    gemini_api_key: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -75,6 +79,12 @@ class Settings:
             llm_model=os.getenv("ALPHA_LLM_MODEL", "qwen3:1.7b"),
             llm_api_key=os.getenv("ALPHA_LLM_API_KEY", "ollama"),
             llm_timeout_seconds=_int_env("ALPHA_LLM_TIMEOUT_SECONDS", 300),
+            llm_provider=os.getenv("ALPHA_LLM_PROVIDER", "openai_compatible"),
+            gemini_base_url=os.getenv(
+                "GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
+            ).rstrip("/"),
+            gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-pro"),
+            gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
         )
 
 

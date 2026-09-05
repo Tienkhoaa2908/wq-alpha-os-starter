@@ -41,7 +41,7 @@ if ($SyncCatalog) {
 }
 
 if ($Generate -and -not $DryRun) {
-    Invoke-AlphaOs propose --count $Limit
+    Invoke-AlphaOs agent run --count $Limit --per-card 2
 }
 
 Invoke-AlphaOs simulate --limit $Limit --dry-run

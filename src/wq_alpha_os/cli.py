@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,10 @@ from .research.prompts import build_prompt
 from .research.proposer import ingest_proposals, parse_response, propose, write_prompt_packet
 from .research.reviewer import review_pending
 from .research.seeds import seed_family
+from .research.agentic import design as agent_design
+from .research.agentic import discover as agent_discover
+from .research.agentic import packet as agent_packet
+from .research.agentic import run_cycle as agent_run_cycle
 
 
 def _print(value: Any) -> None:
@@ -74,8 +79,11 @@ def cmd_prompt(args: argparse.Namespace) -> None:
 
 def cmd_propose(args: argparse.Namespace) -> None:
     initialize()
+    settings = Settings.from_env()
+    if args.provider:
+        settings = replace(settings, llm_provider=args.provider.replace("-", "_"))
     with session() as connection:
-        path, results = propose(connection, args.count)
+        path, results = propose(connection, args.count, settings)
     _print({"response_path": str(path), **_result_counts(results)})
 
 
@@ -132,7 +140,7 @@ def cmd_export(args: argparse.Namespace) -> None:
 def cmd_status(_: argparse.Namespace) -> None:
     initialize()
     with session() as connection:
-        tables = ("datasets", "fields", "operators", "hypotheses", "alpha_artifacts", "rejected_candidates", "simulation_runs", "reviews")
+        tables = ("datasets", "fields", "operators", "hypotheses", "hypothesis_cards", "alpha_artifacts", "rejected_candidates", "simulation_runs", "reviews")
         counts = {name: connection.execute(f"SELECT count(*) FROM {name}").fetchone()[0] for name in tables}
         statuses = {row[0]: row[1] for row in connection.execute("SELECT status,count(*) FROM alpha_artifacts GROUP BY status")}
         families = [dict(row) for row in connection.execute(
@@ -144,8 +152,25 @@ def cmd_status(_: argparse.Namespace) -> None:
 def cmd_run(args: argparse.Namespace) -> None:
     from .research.orchestrator import run_cycle
     initialize()
+    settings = Settings.from_env()
+    if args.provider:
+        settings = replace(settings, llm_provider=args.provider.replace("-", "_"))
     with session() as connection:
-        _print(run_cycle(connection, args.budget))
+        _print(run_cycle(connection, args.budget, settings=settings))
+
+
+def cmd_agent(args: argparse.Namespace) -> None:
+    initialize()
+    with session() as connection:
+        if args.agent_command == "packet":
+            result = agent_packet(connection, args.count)
+        elif args.agent_command == "discover":
+            result = agent_discover(connection, args.count)
+        elif args.agent_command == "design":
+            result = agent_design(connection, args.limit, per_card=args.per_card)
+        else:
+            result = agent_run_cycle(connection, args.count, per_card=args.per_card)
+    _print(result)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -181,9 +206,10 @@ def parser() -> argparse.ArgumentParser:
     item.add_argument("--count", type=int, default=8)
     item.add_argument("--output")
     item.set_defaults(func=cmd_prompt)
-    item = sub.add_parser("propose", help="Gọi mô hình tương thích giao diện OpenAI")
+    item = sub.add_parser("propose", help="Gọi mô hình sinh alpha theo cấu hình")
     item.add_argument("--count", type=int, default=8)
-    item.add_argument("--provider", default="ollama", choices=("ollama", "openai-compatible"))
+    item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"),
+                      help="Ghi đè ALPHA_LLM_PROVIDER trong .env cho lần chạy này")
     item.set_defaults(func=cmd_propose)
     item = sub.add_parser("ingest-proposals", help="Nhập phản hồi JSON từ mô hình")
     item.add_argument("file")
@@ -211,8 +237,26 @@ def parser() -> argparse.ArgumentParser:
     item.set_defaults(func=cmd_status)
     item = sub.add_parser("run", help="Chạy một vòng sinh, mô phỏng và đánh giá")
     item.add_argument("--budget", type=int, default=8)
-    item.add_argument("--provider", default="ollama", choices=("ollama", "openai-compatible"))
+    item.add_argument("--provider", choices=("gemini", "ollama", "openai-compatible"),
+                      help="Ghi đè ALPHA_LLM_PROVIDER trong .env cho lần chạy này")
     item.set_defaults(func=cmd_run)
+
+    item = sub.add_parser("agent", help="Tác nhân Gemini sinh giả thuyết và thiết kế alpha")
+    child = item.add_subparsers(dest="agent_command", required=True)
+    child_packet = child.add_parser("packet", help="Xuất gói khám phá, không gọi Gemini")
+    child_packet.add_argument("--count", type=int, default=4)
+    child_packet.set_defaults(func=cmd_agent)
+    child_discover = child.add_parser("discover", help="Gọi Gemini để sinh thẻ giả thuyết, chưa sinh alpha")
+    child_discover.add_argument("--count", type=int, default=4)
+    child_discover.set_defaults(func=cmd_agent)
+    child_design = child.add_parser("design", help="Thiết kế và phản biện alpha từ thẻ đã lưu")
+    child_design.add_argument("--limit", type=int, default=4)
+    child_design.add_argument("--per-card", type=int, default=2)
+    child_design.set_defaults(func=cmd_agent)
+    child_cycle = child.add_parser("run", help="Khám phá, thiết kế, phản biện; không mô phỏng")
+    child_cycle.add_argument("--count", type=int, default=4)
+    child_cycle.add_argument("--per-card", type=int, default=2)
+    child_cycle.set_defaults(func=cmd_agent)
     return root
 
 

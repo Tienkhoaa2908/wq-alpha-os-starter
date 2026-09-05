@@ -6,10 +6,7 @@ import urllib.error
 import urllib.request
 
 from ..config import Settings
-
-
-class ProviderError(RuntimeError):
-    pass
+from .base import ProviderError
 
 
 class OpenAICompatibleProvider:

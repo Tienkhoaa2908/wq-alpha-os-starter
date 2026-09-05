@@ -8,7 +8,7 @@ from typing import Any
 
 from ..config import PROJECT_ROOT, Settings
 from ..db import json_dumps
-from ..providers.openai_compatible import OpenAICompatibleProvider
+from ..providers import provider_for
 from .artifacts import IngestResult, ingest_candidate
 from .prompts import PROMPT_VERSION, PromptPacket, build_prompt
 
@@ -59,8 +59,9 @@ def propose(connection: sqlite3.Connection, count: int, settings: Settings | Non
     settings = settings or Settings.from_env()
     packet = build_prompt(connection, count)
     prompt_path = write_prompt_packet(packet)
-    answer = OpenAICompatibleProvider(settings).complete(packet.system, packet.user)
+    answer = provider_for(settings).complete(packet.system, packet.user)
     answer_path = prompt_path.with_name("alpha_response.json")
     answer_path.write_text(answer, encoding="utf-8")
-    return answer_path, ingest_proposals(connection, parse_response(answer), generator="openai_compatible",
-                                         model_name=settings.llm_model, prompt_hash=packet.prompt_hash)
+    model_name = settings.gemini_model if settings.llm_provider.lower() == "gemini" else settings.llm_model
+    return answer_path, ingest_proposals(connection, parse_response(answer), generator=settings.llm_provider,
+                                         model_name=model_name, prompt_hash=packet.prompt_hash)

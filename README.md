@@ -1,42 +1,30 @@
 # WQ Alpha OS
 
-Hệ thống nghiên cứu alpha (tín hiệu dự báo) chạy bằng dòng lệnh cho WorldQuant BRAIN. Mục tiêu của dự án là tạo một vòng nghiên cứu có bằng chứng:
+Hệ thống nghiên cứu alpha (tín hiệu dự báo) chạy bằng dòng lệnh cho WorldQuant BRAIN. Mục tiêu là tạo alpha có cơ chế kinh tế rõ ràng, kiểm tra được và không phải bản sao tham số của alpha cũ.
 
-## Nguyên tắc làm việc tiết kiệm dung lượng
+## Nguyên tắc vận hành
 
-Ưu tiên cho máy tự làm những việc có thể tự động hóa: chạy lệnh, ghi kết quả vào cơ sở dữ liệu, lưu bằng chứng và tạo báo cáo ngắn. Không gửi toàn bộ nhật ký, danh sách alpha hoặc dữ liệu PnL (lãi và lỗ theo thời gian) vào cuộc trao đổi; chỉ gửi tổng hợp, lỗi cùng đường dẫn tệp khi cần.
+- Máy tự thực hiện các bước lặp lại: tạo giả thuyết, kiểm tra cấu trúc, chống trùng, mô phỏng, lấy bằng chứng, chấm điểm và xuất tệp.
+- `data/db/` và `data/evidence/` là nguồn sự thật cục bộ. Không cần đưa nhật ký dài, danh sách alpha hay dữ liệu PnL (lãi/lỗ theo thời gian) vào trao đổi.
+- Gemini chỉ dùng để suy luận giả thuyết, thiết kế thí nghiệm và phản biện. Chương trình cục bộ quyết định cú pháp, kiểu dữ liệu, độ trùng và việc đưa alpha vào hàng đợi mô phỏng.
+- Không tự động nộp alpha. Hệ thống chỉ mô phỏng, lưu kết quả và xuất đường dẫn; người dùng tự quyết định mô phỏng hoặc nộp trên BRAIN.
+- Không in hoặc đưa vào Git tài khoản, mật khẩu, mã phiên và khóa truy cập.
 
-Tài liệu và các tệp trong `data/evidence/` là nguồn sự thật của hệ thống. Khi cần tiếp tục, chỉ nêu việc mới hoặc quyết định mới; không cần dịch lại ngữ cảnh đã có trong tài liệu.
-
-1. đồng bộ trường dữ liệu và toán tử từ BRAIN;
-2. tạo giả thuyết và biểu thức có kiểu;
-3. chặn biểu thức sai hoặc trùng trước khi mô phỏng;
-4. gửi mô phỏng, lưu nguyên văn kết quả và các kiểm tra;
-5. chấm điểm, kiểm tra độc lập và chỉ đột biến từ bằng chứng thật;
-6. xuất tệp CSV (bảng dữ liệu phân cách bằng dấu phẩy) có đường dẫn mở BRAIN và tự điền biểu thức.
-
-Không có giao diện trang mạng. SQLite (cơ sở dữ liệu gọn trong một tệp) được dùng cho trạng thái; mọi phản hồi quan trọng từ BRAIN được lưu bất biến trong `data/evidence/`.
-
-Các trạng thái có nghĩa rõ ràng:
-
-- `legacy_unverified`: alpha cũ chỉ dùng để chống trùng, chưa được tin là tốt;
-- `validated`: đúng cú pháp và danh mục, sẵn sàng mô phỏng;
-- `tested`: đã có kết quả BRAIN nhưng chưa qua hết cổng độc lập;
-- `promoted`: đạt ngưỡng chỉ số, kiểm tra tương quan và đủ bằng chứng theo năm.
-
-## 1. Cài đặt
+## 1. Cài đặt một lần
 
 Yêu cầu Python (ngôn ngữ lập trình) 3.11 trở lên.
 
 ```powershell
-cd C:\Users\welcome\OneDrive\Desktop\C++\wq-alpha-os-starter
+Set-Location 'C:\Users\welcome\OneDrive\Desktop\C++\wq-alpha-os-starter'
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e .
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
-Khởi tạo cơ sở dữ liệu mới và nhập dữ liệu cũ:
+Nếu môi trường `.venv` đã có, chỉ cần mở PowerShell (trình dòng lệnh) tại đúng thư mục dự án và chạy các lệnh `alpha-os` bên dưới. Không dùng đường dẫn `..venv`; đường dẫn đúng là `.\.venv\...`.
+
+Khởi tạo cơ sở dữ liệu SQLite (cơ sở dữ liệu gọn trong một tệp) và, nếu có, nhập dữ liệu cũ:
 
 ```powershell
 alpha-os init
@@ -44,63 +32,96 @@ alpha-os catalog import-legacy --source data/db/legacy_wq_alpha_os.sqlite
 alpha-os status
 ```
 
-## 2. Tạo lứa alpha nền
+## 2. Thiết lập Gemini
 
-Lứa đầu tiên dùng cấu trúc đa khung thời gian, kiểm soát nhóm và `hump` (giới hạn thay đổi vị thế), được rút ra từ alpha mẫu đã xác nhận:
+Mở `.env`, chỉ trên máy của bạn, rồi điền tối thiểu:
+
+```dotenv
+GEMINI_API_KEY=khoa_api_rieng_cua_ban
+GEMINI_MODEL=gemini-2.5-pro
+```
+
+`GEMINI_BASE_URL` đã có giá trị mặc định trong `.env.example`, thường không cần sửa. Luồng `alpha-os agent ...` luôn gọi Gemini; có thể thêm dòng dưới đây nếu cũng muốn lệnh tạo đề xuất cũ dùng Gemini:
+
+```dotenv
+ALPHA_LLM_PROVIDER=gemini
+```
+
+Không đặt khóa vào `.env.example`, không chụp màn hình khóa và không gửi tệp `.env`. Khóa được gửi trong tiêu đề của lời gọi API (giao diện lập trình), không được ghi vào tệp bằng chứng hay thông báo lỗi.
+
+## 3. Luồng tác tử Gemini
+
+Luồng mới tách ba việc để tránh Gemini sao chép alpha cũ:
+
+1. Khám phá chỉ tạo **thẻ giả thuyết**: cơ chế kinh tế, dấu kỳ vọng, chân trời, trường dữ liệu và điều kiện bác bỏ; chưa được phép tạo công thức.
+2. Thiết kế tạo tối đa vài biểu thức thí nghiệm nhỏ từ từng thẻ.
+3. Phản biện độc lập, bộ kiểm tra cục bộ, đồ thị tương thích toán tử và cổng chống trùng quyết định biểu thức nào trở thành `validated` (đã xác thực cục bộ).
+
+Đồ thị toán tử chỉ cho phép ghép đúng loại dữ liệu và thứ tự hợp lý, chẳng hạn xử lý chuỗi thời gian trước khi xếp hạng theo mặt cắt, hoặc rút gọn dữ liệu véc-tơ trước khi dùng như ma trận. Các toán tử cùng vai trò thay thế không được chồng tùy tiện.
+
+Trong lời gọi Gemini, chương trình chỉ gửi siêu dữ liệu trường đã được chọn, các ràng buộc toán tử và bài học tổng hợp từ các lần thất bại. Không gửi công thức alpha cũ hoặc dữ liệu PnL riêng. Công thức mới do Gemini vừa tạo chỉ được đưa sang lượt phản biện trong chính vòng đó.
+
+### Các lệnh
+
+Xem gói nghiên cứu trước, không gọi Gemini và không mô phỏng:
 
 ```powershell
-alpha-os seed --field mdl177_2_deepvaluefactor_ttmcfp
+alpha-os agent packet --count 4
+```
+
+Gọi Gemini để tạo thẻ giả thuyết, chưa tạo alpha:
+
+```powershell
+alpha-os agent discover --count 4
+```
+
+Thiết kế và phản biện alpha từ các thẻ đã lưu; chưa mô phỏng:
+
+```powershell
+alpha-os agent design --limit 4 --per-card 2
+```
+
+Chạy cả khám phá, thiết kế, phản biện và kiểm tra cục bộ; vẫn chưa mô phỏng:
+
+```powershell
+alpha-os agent run --count 4 --per-card 2
+```
+
+Sau mỗi lệnh, bằng chứng câu nhắc và phản hồi được lưu trong `data/evidence/agent/`. Có thể kiểm tra số lượng thẻ, alpha hợp lệ và hàng đợi bằng:
+
+```powershell
+alpha-os status
 alpha-os candidates --status validated --limit 30
 ```
 
-Mọi alpha phải qua bộ phân tích cú pháp, kiểm tra trường/toán tử và cổng chống trùng. Không biểu thức nào được coi là tốt trước khi có kết quả BRAIN.
+## 4. Đồng bộ danh mục và mô phỏng
 
-## 3. Dùng Qwen miễn phí tại máy
-
-Đầu nối mặc định hỗ trợ Ollama (trình chạy mô hình tại máy) và Qwen (mô hình ngôn ngữ mã nguồn mở):
+Lần đầu, hoặc khi cần làm mới trường dữ liệu và toán tử mà tài khoản được phép dùng:
 
 ```powershell
-ollama pull qwen3:1.7b
-ollama serve
+alpha-os catalog sync --region USA --universe TOP3000 --delay 1
 ```
 
-Riêng máy hiện tại chỉ có khoảng 4 GB bộ nhớ và đồ họa tích hợp, vì vậy bản 8B (tám tỷ tham số) không phù hợp. Bản `qwen3:1.7b` ở trên chỉ nên dùng để thử đầu nối, không nên kỳ vọng nó tạo giả thuyết tốt hơn Codex. Với lứa nghiên cứu quan trọng, dùng lệnh `prompt` bên dưới và đưa gói câu nhắc cho Codex; bộ xác thực và chống trùng vẫn chạy tại máy.
-
-Trong `.env`:
-
-```dotenv
-ALPHA_LLM_BASE_URL=http://localhost:11434/v1
-ALPHA_LLM_MODEL=qwen3:1.7b
-ALPHA_LLM_API_KEY=ollama
-```
-
-Tạo đề xuất:
+Kiểm tra hàng đợi trước khi gửi thật:
 
 ```powershell
-alpha-os propose --count 8
+alpha-os simulate --limit 8 --dry-run
 ```
 
-Nếu không muốn chạy mô hình tại máy, tạo gói câu nhắc rồi đưa tệp đó cho Codex hoặc một mô hình khác:
+Gửi mô phỏng, lấy kết quả và chấm lại:
 
 ```powershell
-alpha-os prompt --count 8
-alpha-os ingest-proposals data/outbox/proposals.json
+alpha-os simulate --limit 8
+alpha-os refresh --limit 8
+alpha-os review --limit 20
+alpha-os status
 ```
 
-Định dạng JSON (dữ liệu có cấu trúc) bắt buộc được ghi ngay trong gói câu nhắc.
+Một alpha đã có hồ sơ mô phỏng, kể cả hồ sơ lỗi hoặc hết thời gian chờ, sẽ không tự gửi lại để tránh tạo bản trùng. Muốn thử lại, phải tạo biến thể mới và để cổng chống trùng kiểm tra.
 
-## 4. Kết nối BRAIN
+## 5. Chạy một vòng bằng tập lệnh PowerShell
 
-Thông tin đăng nhập chỉ nằm trong `.env` tại máy và đã bị Git bỏ qua:
-
-```dotenv
-BRAIN_EMAIL=dia_chi_cua_ban
-BRAIN_PASSWORD=mat_khau_cua_ban
-```
-
-Không gửi `.env`, mật khẩu, mã phiên hoặc dữ liệu PnL (lãi và lỗ theo thời gian) cho mô hình.
-
-Phải điền tài khoản vào `.env`, không điền vào `.env.example`. Không cần kích hoạt môi trường nếu gọi đúng tệp thực thi. Từ bất kỳ thư mục nào, cách ít nhầm nhất là:
+Tập lệnh tự tìm đúng tệp thực thi trong `.venv`, vì vậy nên gọi từ thư mục dự án:
 
 ```powershell
 Set-Location 'C:\Users\welcome\OneDrive\Desktop\C++\wq-alpha-os-starter'
@@ -108,95 +129,41 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\scripts\run_research.ps1 -Limit 8
 ```
 
-Muốn gọi mô hình Qwen/Ollama (mô hình chạy tại máy) để tạo thêm đề xuất trước khi mô phỏng, thêm `-Generate`:
+Thêm `-Generate` để chạy tác tử Gemini trước, sau đó kiểm tra hàng đợi, mô phỏng các alpha hợp lệ, tải kết quả, chấm điểm và xuất hai tệp:
+
+- `data/exports/alpha_tested.csv`: alpha đã có kết quả mô phỏng.
+- `data/exports/alpha_promoted.csv`: alpha đã vượt các cổng thăng hạng.
 
 ```powershell
 .\scripts\run_research.ps1 -Limit 8 -Generate
 ```
 
-Nếu chỉ muốn xem hàng đợi mà không gọi mô hình hay máy chủ mô phỏng, dùng `-DryRun`.
+`-Generate` không tự nộp alpha. Nếu thêm `-DryRun`, tập lệnh chỉ kiểm tra hàng đợi, không gọi Gemini, không mô phỏng thật, không tải kết quả và không xuất tệp mới.
 
-Nếu máy đã cho phép chạy tệp PowerShell (tập lệnh PowerShell), có thể bỏ qua dòng `Set-ExecutionPolicy`. Hoặc gọi trực tiếp bằng `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_research.ps1 -Limit 8`.
-
-Muốn kiểm tra mọi thứ mà không gửi mô phỏng lên máy chủ, dùng cờ `-DryRun` (chỉ kiểm tra):
+Lần đầu muốn đồng bộ danh mục ngay trong cùng vòng:
 
 ```powershell
-.\scripts\run_research.ps1 -Limit 8 -DryRun
+.\scripts\run_research.ps1 -Limit 8 -SyncCatalog -Generate
 ```
 
-Cờ này chỉ kiểm tra hàng đợi rồi xem trạng thái; nó không chạy mô phỏng thật, không tải kết quả và không xuất tệp mới.
+## 6. Xuất đường dẫn mở trình mô phỏng
 
-Lần đầu cần đồng bộ lại danh mục thì thêm `-SyncCatalog`. Các lần sau không thêm cờ này để tránh tải lại hàng nghìn trường:
+Cài một lần tệp người dùng [scripts/brain_prefill.user.js](scripts/brain_prefill.user.js) bằng Tampermonkey (tiện ích chạy mã người dùng). Sau đó xuất:
 
 ```powershell
-.\scripts\run_research.ps1 -Limit 8 -SyncCatalog
+alpha-os export --output data/exports/alpha_promoted.csv --status promoted
 ```
 
-Đồng bộ danh mục mà tài khoản được phép truy cập:
+Cột `simulator_url` có thể đưa vào Google Sheets (bảng tính Google). Khi bấm đường dẫn, BRAIN mở bằng phiên đăng nhập hiện có và tệp người dùng cố điền biểu thức vào trình mô phỏng. Nó không tự bấm nút mô phỏng hoặc nút nộp.
 
-```powershell
-alpha-os catalog sync --region USA --universe TOP3000 --delay 1
-```
-
-Kiểm tra hàng đợi mà không gửi mô phỏng:
-
-```powershell
-alpha-os simulate --limit 5 --dry-run
-```
-
-Gửi thật và thu kết quả:
-
-```powershell
-alpha-os simulate --limit 5
-alpha-os refresh --limit 5
-alpha-os review --limit 20
-alpha-os status
-```
-
-Đầu nối tuân theo `Retry-After` (thời gian máy chủ yêu cầu chờ), giới hạn song song mặc định là một và không tự nộp alpha. Tài khoản có xác minh bổ sung hoặc không có quyền dùng API (giao diện lập trình) sẽ dừng với hướng dẫn rõ ràng.
-
-Một alpha đã có hồ sơ mô phỏng (kể cả hồ sơ lỗi hoặc hết thời gian chờ) sẽ không tự gửi lại để tránh tạo bản trùng. Muốn thử lại, hãy tạo một biến thể mới có quan hệ với alpha cũ và để bộ chống trùng kiểm tra trước.
-
-## 5. Xuất đường dẫn mở trình mô phỏng
-
-Cài một lần tệp người dùng [scripts/brain_prefill.user.js](scripts/brain_prefill.user.js) bằng Tampermonkey (tiện ích chạy đoạn mã người dùng). Sau đó:
-
-```powershell
-alpha-os export --output data/exports/alpha_candidates.csv --status promoted
-```
-
-Cột `simulator_url` trong CSV có thể đưa vào Google Sheets (bảng tính Google). Khi bấm đường dẫn, BRAIN mở bằng phiên đăng nhập hiện có và đoạn mã người dùng cố gắng điền biểu thức. Nó không tự bấm nút mô phỏng.
-
-## 6. Vòng nghiên cứu tự động
-
-```powershell
-alpha-os run --budget 12 --provider ollama
-```
-
-Một vòng gồm: chọn họ nghiên cứu, tạo đề xuất, xác thực, chặn trùng, mô phỏng, thu bằng chứng, chấm điểm và kiểm tra độc lập. Chỉ các kết quả đã được BRAIN xác nhận mới cập nhật điểm của họ nghiên cứu.
-
-## 7. Quy tắc an toàn nghiên cứu
-
-- Không tự nộp alpha; quyết định nộp là của người dùng.
-- Không tối ưu đồng thời biểu thức và mọi thiết lập.
-- Không dùng kết quả chưa xác minh làm ký ức.
-- Mọi thử nghiệm có cha, phép đột biến, phiên bản câu nhắc và dấu vân tay.
-- Alpha trùng chính xác luôn bị chặn. Alpha gần trùng chỉ được giữ khi là phép loại bỏ thành phần hoặc thử độ nhạy có cha rõ ràng, và không được thăng hạng nếu chưa qua kiểm tra tương quan.
-- Giữ số lần thử theo từng họ để thấy rủi ro chọn lọc quá mức.
-
-Đọc thêm: [docs/DANH_GIA_HIEN_TRANG.md](docs/DANH_GIA_HIEN_TRANG.md), [docs/KIEN_TRUC.md](docs/KIEN_TRUC.md), [docs/THU_THAP_DU_LIEU.md](docs/THU_THAP_DU_LIEU.md), [docs/QUY_TRINH_NGHIEN_CUU.md](docs/QUY_TRINH_NGHIEN_CUU.md).
-
-## 8. Kiểm thử
+## 7. Kiểm thử
 
 ```powershell
 python -m unittest discover -s tests -v
 ```
 
-## Nguồn tham khảo
+## Tài liệu tham khảo
 
-- WorldQuant BRAIN, ví dụ alpha theo nhóm dữ liệu: https://worldquantbrain.com/alpha-examples
-- Hướng dẫn IQC 2026: https://platform.worldquantbrain.com/competition/IQC2026S1/agreement
-- AgonAlpha, tìm kiếm theo hiện vật nghiên cứu có kiểm chứng: https://arxiv.org/abs/2608.11250
-- Qwen3, cách chạy tại máy và giấy phép Apache 2.0: https://github.com/QwenLM/Qwen3
-
-Các đường dẫn API BRAIN không được coi là hợp đồng công khai ổn định. Đầu nối lưu phản hồi thô và báo lỗi khi giao diện máy chủ thay đổi.
+- [Ví dụ alpha của WorldQuant BRAIN](https://worldquantbrain.com/alpha-examples)
+- [Trang giới thiệu WorldQuant BRAIN](https://www.worldquant.com/brain/?next=/dashboard)
+- [Hướng dẫn Gemini API (giao diện lập trình)](https://ai.google.dev/gemini-api/docs/get-started)

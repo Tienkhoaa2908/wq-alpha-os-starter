@@ -4,17 +4,22 @@ import sqlite3
 from typing import Any
 
 from ..brain.simulation import run_pending
-from ..providers.openai_compatible import ProviderError
+from ..config import Settings
+from ..providers import ProviderError
 from .mutations import evidence_mutations
 from .proposer import propose
 from .reviewer import review_pending
 
 
-def run_cycle(connection: sqlite3.Connection, budget: int) -> dict[str, Any]:
+def run_cycle(
+    connection: sqlite3.Connection,
+    budget: int,
+    settings: Settings | None = None,
+) -> dict[str, Any]:
     mutated = evidence_mutations(connection, max(1, budget // 3))
     provider_error = None
     try:
-        _, generated = propose(connection, max(1, budget - len(mutated)))
+        _, generated = propose(connection, max(1, budget - len(mutated)), settings)
     except ProviderError as exc:
         generated = []
         provider_error = str(exc)

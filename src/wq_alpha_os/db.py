@@ -10,7 +10,7 @@ from typing import Any, Iterator
 from .config import Settings
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 DDL = """
@@ -101,6 +101,31 @@ CREATE TABLE IF NOT EXISTS hypotheses (
     source TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS hypothesis_cards (
+    id TEXT PRIMARY KEY,
+    hypothesis_id TEXT NOT NULL,
+    family TEXT NOT NULL,
+    statement TEXT NOT NULL,
+    mechanism TEXT NOT NULL,
+    expected_direction TEXT,
+    horizon TEXT,
+    data_themes_json TEXT NOT NULL,
+    field_names_json TEXT NOT NULL,
+    operator_roles_json TEXT NOT NULL,
+    falsifier TEXT NOT NULL,
+    novelty_json TEXT NOT NULL,
+    status TEXT NOT NULL,
+    generator TEXT NOT NULL,
+    model_name TEXT,
+    prompt_hash TEXT,
+    evidence_path TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(hypothesis_id) REFERENCES hypotheses(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_hypothesis_cards_status ON hypothesis_cards(status);
+CREATE INDEX IF NOT EXISTS idx_hypothesis_cards_family ON hypothesis_cards(family);
 
 CREATE TABLE IF NOT EXISTS alpha_artifacts (
     id TEXT PRIMARY KEY,

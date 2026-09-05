@@ -2,9 +2,9 @@
 
 > Tệp này được tạo bởi `alpha-os snapshot`. Không chỉnh số liệu thủ công; hãy cập nhật từ SQLite rồi commit/push.
 
-- Thời điểm: `2026-09-05T16:25:28.134430+00:00`
+- Thời điểm: `2026-09-05T16:32:24.991894+00:00`
 - Branch: `alpha-research-v2`
-- Commit: `347aec6700d7e2554d9d06ee50eb4dfb951906e6`
+- Commit: `214298a3c6847c3f1c5ae93a5b05aaa1d96d3c6f`
 
 ## Danh mục và tri thức
 

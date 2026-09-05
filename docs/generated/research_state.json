@@ -1,8 +1,8 @@
 {
   "snapshot": {
-    "generated_at": "2026-09-05T16:25:28.134430+00:00",
+    "generated_at": "2026-09-05T16:32:24.991894+00:00",
     "git_branch": "alpha-research-v2",
-    "git_commit": "347aec6700d7e2554d9d06ee50eb4dfb951906e6",
+    "git_commit": "214298a3c6847c3f1c5ae93a5b05aaa1d96d3c6f",
     "source": "local SQLite sanitized snapshot"
   },
   "configuration": {

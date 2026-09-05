@@ -137,6 +137,8 @@ def _infer_type(
                     )
                 )
             return ValueType.MATRIX
+        if name in {"bucket", "densify"}:
+            return ValueType.GROUP
         if name in {"if_else", "trade_when"} and len(argument_types) >= 2:
             return argument_types[1]
         if argument_types:

@@ -4,18 +4,19 @@ from __future__ import annotations
 
 This wrapper always writes a small sanitized run-status file so a failed Gemini
 or local research stage is visible on GitHub after the PowerShell wrapper
-finalizes the task.  Secrets, prompts, raw responses and FASTEXPR expressions
+finalizes the task. Secrets, prompts, raw responses and FASTEXPR expressions
 are never written to this status file.
 """
 
 import argparse
+from dataclasses import replace
 from datetime import UTC, datetime
 import json
-from pathlib import Path
 import traceback
 
 from wq_alpha_os.config import PROJECT_ROOT, Settings
 from wq_alpha_os.db import initialize, session
+from wq_alpha_os.providers import GeminiProvider
 from wq_alpha_os.research.first_cycle import run_first_cycle
 
 
@@ -54,15 +55,30 @@ def main() -> int:
         "requested_hypotheses": args.count,
     })
 
+    selected_model: str | None = None
     try:
         initialize()
         settings = Settings.from_env()
+
+        # Resolve against GET /models using the user's own API key. This avoids
+        # failing the whole research run when a configured model is retired or
+        # unavailable to this Google AI project. Replace Settings before the
+        # run so evidence/provenance records the actual model used.
+        gemini_settings = replace(settings, llm_provider="gemini")
+        resolver = GeminiProvider(gemini_settings)
+        selected_model = resolver.resolve_model()
+        settings = replace(
+            gemini_settings,
+            gemini_model=selected_model,
+        )
+
         _write_status({
             "status": "running",
             "stage": "first_cycle",
             "requested_hypotheses": args.count,
-            "provider": settings.llm_provider,
-            "model": settings.gemini_model if settings.llm_provider.lower() == "gemini" else settings.llm_model,
+            "provider": "gemini",
+            "configured_model": gemini_settings.gemini_model,
+            "selected_model": selected_model,
         })
         with session() as connection:
             result = run_first_cycle(connection, count=args.count, settings=settings)
@@ -71,6 +87,7 @@ def main() -> int:
             "status": "failed",
             "stage": "first_cycle",
             "requested_hypotheses": args.count,
+            "selected_model": selected_model,
             "error_type": exc.__class__.__name__,
             "error": _safe_error(exc),
             "traceback_tail": [
@@ -82,16 +99,19 @@ def main() -> int:
         print(json.dumps({
             "ok": False,
             "status_path": str(STATUS_PATH),
+            "selected_model": selected_model,
             "error_type": exc.__class__.__name__,
             "error": _safe_error(exc),
             "brain_simulations_sent": 0,
         }, ensure_ascii=False, indent=2))
         return 1
 
+    result["gemini_model"] = selected_model
     _write_status({
         "status": "success",
         "stage": "dry_run_complete",
         "requested_hypotheses": args.count,
+        "selected_model": selected_model,
         "ready_for_first_simulation": bool(result.get("ready_for_first_simulation")),
         "gate_reasons": result.get("gate_reasons", []),
         "hypothesis_cards": result.get("hypothesis_cards", []),

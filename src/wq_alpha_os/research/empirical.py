@@ -10,6 +10,7 @@ from typing import Any, Iterable
 
 from ..config import load_defaults
 from ..db import json_dumps, utc_now
+from .recordsets import annual_sharpes
 from .scorer import check_summary
 
 
@@ -32,20 +33,7 @@ def _annual_min(payload: str | None) -> float | None:
         data = json.loads(payload)
     except (TypeError, ValueError):
         return None
-    rows: list[dict[str, Any]] = []
-    if isinstance(data, list):
-        rows = [item for item in data if isinstance(item, dict)]
-    elif isinstance(data, dict):
-        raw = data.get("value") or data.get("results") or data.get("data")
-        if isinstance(raw, list):
-            rows = [item for item in raw if isinstance(item, dict)]
-    values = []
-    for row in rows:
-        if str(row.get("stage") or "IS").upper() != "IS":
-            continue
-        value = _float(row.get("sharpe"))
-        if value is not None:
-            values.append(value)
+    values = annual_sharpes(data)
     return min(values) if values else None
 
 
@@ -114,8 +102,6 @@ def rebuild_motif_stats(connection: sqlite3.Connection) -> dict[str, int]:
                 annual_values.append(annual)
         role_hash, theme, horizon = meta[key]
         n = len(items)
-        # Conservative uncertainty proxy: small samples stay uncertain.  It is
-        # intentionally simple until enough trials justify a probabilistic model.
         uncertainty = round(1.0 / math.sqrt(max(1, n)), 6)
         stats = {
             "completed_runs": n,

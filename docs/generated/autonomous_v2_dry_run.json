@@ -1,0 +1,84 @@
+{
+  "version": "deterministic-semantic-search-v1",
+  "network_calls": 0,
+  "brain_simulations_sent": 0,
+  "pool_size": 409,
+  "accepted": [
+    {
+      "artifact_id": "f62d657a-660b-4a47-8144-b094705b357d",
+      "family": "auto_volume_liquidity_extremum_recency_43bd8b94",
+      "field": "mdl177_liquidityriskfactor_atmputvol_alt",
+      "dataset": "Analysts' Factor Model",
+      "theme": "volume_liquidity",
+      "template": "extremum_recency",
+      "horizon_bucket": "short",
+      "base_score": 4.27416,
+      "novelty_score": 1.0,
+      "nearest_similarity": 0.432803
+    },
+    {
+      "artifact_id": "e579efe4-c2e9-4614-aafc-b71aace52897",
+      "family": "auto_analyst_revision_information_staleness_872e1a93",
+      "field": "analyst_revision_rank_derivative",
+      "dataset": "Fundamental Scores",
+      "theme": "analyst_revision",
+      "template": "information_staleness",
+      "horizon_bucket": "medium",
+      "base_score": 4.26,
+      "novelty_score": 1.0,
+      "nearest_similarity": 0.384459
+    },
+    {
+      "artifact_id": "c6ca6fdd-05fc-4c42-8a79-d882fed8e7d3",
+      "family": "auto_sentiment_news_extremum_recency_a7e32923",
+      "field": "snt_social_volume",
+      "dataset": "Social Media Data for Equity",
+      "theme": "sentiment_news",
+      "template": "extremum_recency",
+      "horizon_bucket": "event",
+      "base_score": 4.26,
+      "novelty_score": 1.0,
+      "nearest_similarity": 0.366667
+    },
+    {
+      "artifact_id": "6a32e1ac-9c30-48e7-81b9-4e9c97a08c55",
+      "family": "auto_profitability_information_staleness_5dbd3a29",
+      "field": "max_adjusted_net_profit_guidance",
+      "dataset": "Analyst Estimate Data for Equity",
+      "theme": "profitability",
+      "template": "information_staleness",
+      "horizon_bucket": "very_slow",
+      "base_score": 4.2,
+      "novelty_score": 1.0,
+      "nearest_similarity": 0.55
+    },
+    {
+      "artifact_id": "ad25d4cb-8f67-4d63-846b-fdd1df742a02",
+      "family": "auto_risk_volatility_extremum_recency_e163da13",
+      "field": "historical_volatility_10",
+      "dataset": "Volatility Data",
+      "theme": "risk_volatility",
+      "template": "extremum_recency",
+      "horizon_bucket": "short",
+      "base_score": 4.18464,
+      "novelty_score": 1.0,
+      "nearest_similarity": 0.470081
+    },
+    {
+      "artifact_id": "b14ac4ed-202a-4e7a-b2ce-41c25aa2467d",
+      "family": "auto_options_risk_dispersion_107e8aa3",
+      "field": "option_breakeven_10",
+      "dataset": "Options Analytics",
+      "theme": "options",
+      "template": "risk_dispersion",
+      "horizon_bucket": "short",
+      "base_score": 3.9868,
+      "novelty_score": 1.0,
+      "nearest_similarity": 0.359873
+    }
+  ],
+  "rejected": [],
+  "theme_count": 6,
+  "dataset_count": 6,
+  "ready_for_simulation_review": true
+}

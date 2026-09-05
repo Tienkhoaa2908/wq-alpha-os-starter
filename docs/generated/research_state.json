@@ -1,8 +1,8 @@
 {
   "snapshot": {
-    "generated_at": "2026-09-05T16:32:24.991894+00:00",
+    "generated_at": "2026-09-05T16:48:45.396950+00:00",
     "git_branch": "alpha-research-v2",
-    "git_commit": "214298a3c6847c3f1c5ae93a5b05aaa1d96d3c6f",
+    "git_commit": "a7061db4b57622fc021d5bcf594ed1c1e1db2b9b",
     "source": "local SQLite sanitized snapshot"
   },
   "configuration": {
@@ -28,18 +28,18 @@
     "path_templates": 14
   },
   "research": {
-    "hypotheses": 1,
-    "hypothesis_cards": 0,
-    "alpha_plans": 0,
-    "artifacts_total": 1281,
-    "artifacts_research_eligible": 14,
+    "hypotheses": 7,
+    "hypothesis_cards": 6,
+    "alpha_plans": 6,
+    "artifacts_total": 1287,
+    "artifacts_research_eligible": 20,
     "legacy_unverified_quarantined": 1267,
     "artifact_statuses": {
       "legacy_unverified": 1267,
       "tested": 13,
-      "validated": 1
+      "validated": 7
     },
-    "motifs_active": 14,
+    "motifs_active": 20,
     "motif_contexts": 8,
     "legacy_policy": "retain for provenance; exclude from v2 novelty, subtree and empirical memory"
   },

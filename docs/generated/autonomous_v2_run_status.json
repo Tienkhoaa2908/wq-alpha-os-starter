@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-09-05T16:48:30.171178+00:00",
+  "status": "success",
+  "mode": "deterministic_no_llm",
+  "network_calls": 0,
+  "brain_simulations_sent": 0,
+  "accepted": 6,
+  "pool_size": 409,
+  "theme_count": 6,
+  "dataset_count": 6,
+  "ready_for_simulation_review": true,
+  "audit_path": "docs\\generated\\autonomous_v2_dry_run.json"
+}

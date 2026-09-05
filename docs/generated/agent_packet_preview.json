@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-05T16:32:24.610707+00:00",
+  "generated_at": "2026-09-05T16:48:44.565714+00:00",
   "packet": {
     "version": "semantic-discovery-v2",
     "requested_hypotheses": 6,
@@ -236,7 +236,7 @@
         "profile_confidence": 0.93
       },
       {
-        "name": "snt_social_volume",
+        "name": "snt_social_volume_fast_d1",
         "description": "Normalized tweet volume",
         "dataset": "Social Media Data for Equity",
         "data_type": "MATRIX",
@@ -249,8 +249,8 @@
           20,
           63
         ],
-        "coverage": 100.0,
-        "alpha_count": 6693,
+        "coverage": 99.98,
+        "alpha_count": 1680,
         "local_uses": 0,
         "profile_confidence": 0.93
       },
@@ -948,6 +948,12 @@
       ],
       "stopped_families": [],
       "existing_family_names": [
+        "auto_options_risk_dispersion_107e8aa3",
+        "auto_risk_volatility_extremum_recency_e163da13",
+        "auto_profitability_information_staleness_5dbd3a29",
+        "auto_sentiment_news_extremum_recency_a7e32923",
+        "auto_analyst_revision_information_staleness_872e1a93",
+        "auto_volume_liquidity_extremum_recency_43bd8b94",
         "value_cashflow_multihorizon"
       ]
     },

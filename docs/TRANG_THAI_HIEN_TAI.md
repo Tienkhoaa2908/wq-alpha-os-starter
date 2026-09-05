@@ -2,9 +2,9 @@
 
 > Tệp này được tạo bởi `alpha-os snapshot`. Không chỉnh số liệu thủ công; hãy cập nhật từ SQLite rồi commit/push.
 
-- Thời điểm: `2026-09-05T16:32:24.991894+00:00`
+- Thời điểm: `2026-09-05T16:48:45.396950+00:00`
 - Branch: `alpha-research-v2`
-- Commit: `214298a3c6847c3f1c5ae93a5b05aaa1d96d3c6f`
+- Commit: `a7061db4b57622fc021d5bcf594ed1c1e1db2b9b`
 
 ## Danh mục và tri thức
 
@@ -15,11 +15,11 @@
 
 ## Kho nghiên cứu
 
-- Alpha artifact vật lý: **1281**
-- Artifact đủ điều kiện tham gia nghiên cứu v2: **14**
+- Alpha artifact vật lý: **1287**
+- Artifact đủ điều kiện tham gia nghiên cứu v2: **20**
 - Legacy Gemini bị cách ly: **1267**
-- Motif đang hoạt động: **14**; empirical context: **8**
-- Hypothesis card: **0**; AlphaPlan: **0**
+- Motif đang hoạt động: **20**; empirical context: **8**
+- Hypothesis card: **6**; AlphaPlan: **6**
 
 Legacy policy: giữ lại record cũ để truy vết, nhưng không cho chúng ảnh hưởng novelty, subtree frequency hay empirical memory của v2.
 

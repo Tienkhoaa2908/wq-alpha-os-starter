@@ -14,9 +14,11 @@ Không dùng mô hình cục bộ để sinh alpha. Không để LLM viết FAST
 - `data/evidence/`: bằng chứng mô phỏng và phản hồi model cục bộ.
 - `docs/TRANG_THAI_HIEN_TAI.md`: snapshot ngắn cho người đọc.
 - `docs/generated/research_state.json`: snapshot máy đọc được để ChatGPT/Codex đọc trực tiếp trên GitHub.
+- `docs/generated/field_semantic_audit.json`: phân phối/chất lượng Field Profiler đã được rút gọn an toàn.
+- `docs/generated/agent_packet_preview.json`: đúng packet khám phá v2 sẽ đưa cho Gemini, kèm kiểm tra không có bề mặt công thức/toán tử.
 - `AGENTS.md`: quy tắc vận hành bắt buộc.
 
-Sau mỗi thay đổi có ý nghĩa phải chạy `scripts/finalize_task.ps1` để test, rebuild knowledge, cập nhật snapshot, commit và push GitHub.
+Sau mỗi thay đổi có ý nghĩa phải chạy `scripts/finalize_task.ps1` để test, rebuild knowledge, xuất audit + snapshot, commit và push GitHub.
 
 ## Trạng thái nền hiện biết
 
@@ -29,6 +31,7 @@ Sau mỗi thay đổi có ý nghĩa phải chạy `scripts/finalize_task.ps1` đ
 - 14 simulation lịch sử, 13 hoàn tất.
 - 0 alpha promoted.
 - Alpha tốt nhất lịch sử: Sharpe 1.43, Fitness 0.98, turnover 0.028, self-correlation 0.9415.
+- 1.267 artifact Gemini cũ đã được cách ly khỏi research memory; motif active hiện chỉ còn artifact nghiên cứu hợp lệ.
 
 Chi tiết hiện hành phải đọc từ `docs/TRANG_THAI_HIEN_TAI.md` vì file này chỉ giữ bức tranh kiến trúc lâu dài.
 
@@ -45,7 +48,7 @@ Chính sách v2:
 - không dùng làm trial count hoặc scheduler evidence;
 - không dùng để chặn alpha mới chỉ vì giống output rác cũ.
 
-`alpha-os knowledge build` phải rebuild motif memory chỉ từ artifact nghiên cứu hợp lệ.
+`alpha-os knowledge build` rebuild motif memory chỉ từ artifact nghiên cứu hợp lệ.
 
 ## Kiến trúc research v2
 
@@ -126,6 +129,8 @@ Mỗi field được mô tả ít nhất theo:
 
 Field semantics quyết định grammar. VECTOR không được đi thẳng vào time-series operator nếu chưa reduce.
 
+Field Profiler chưa được coi là đáng tin chỉ vì đã materialize đủ 7.642 dòng. Trước simulation mới phải đọc `field_semantic_audit.json`, đặc biệt tỷ lệ `generic`, `unknown unit`, low-confidence và các field coverage cao nhưng semantic mơ hồ.
+
 ## 14 path template
 
 1. `slow_level_peer`
@@ -173,6 +178,8 @@ field theme
 
 Chỉ simulation hoàn tất và artifact hợp lệ mới được dùng làm bằng chứng.
 
+BRAIN yearly recordset phải được giải mã từ `schema + records[value=list]` một cách thống nhất trước khi dùng cho annual stability. Parser dùng chung nằm ở `research/recordsets.py`; snapshot, empirical memory và scheduler không được tự viết parser riêng lệch nhau.
+
 ## Scheduler v2
 
 Scheduler phải chẩn đoán failure mode trước khi sinh child.
@@ -201,16 +208,24 @@ Kết thúc task bằng:
 .\scripts\finalize_task.ps1 -Message "<commit message>"
 ```
 
-Không được coi task là xong nếu chưa cập nhật `docs/TRANG_THAI_HIEN_TAI.md`, `docs/generated/research_state.json`, commit và push branch hiện tại.
+Lệnh này phải tạo/cập nhật cả bốn tệp phối hợp sau trước khi commit/push:
+
+- `docs/TRANG_THAI_HIEN_TAI.md`
+- `docs/generated/research_state.json`
+- `docs/generated/field_semantic_audit.json`
+- `docs/generated/agent_packet_preview.json`
+
+Không được coi task là xong nếu chưa cập nhật các file điều phối phù hợp, commit và push branch hiện tại.
 
 ## Cổng tiếp theo
 
 Trước khi tiêu simulation mới:
 
-1. rebuild knowledge sau khi cách ly 1.267 legacy artifact;
-2. kiểm tra motif active chỉ còn artifact nghiên cứu thật;
-3. audit chất lượng phân loại 7.642 field;
-4. đọc `alpha-os agent packet --count 6` và kiểm tra field/path diversity;
-5. chỉ khi packet hợp lý mới cho Gemini tạo hypothesis card;
-6. dry-run AlphaPlan trước;
-7. sau đó mới tiêu batch 12 simulation đầu tiên của v2.
+1. xác nhận legacy quarantine: 1.267 legacy không còn trong motif/subtree/empirical memory;
+2. rebuild yearly/annual evidence bằng parser recordset thống nhất;
+3. tạo và đọc `docs/generated/field_semantic_audit.json`;
+4. tạo và đọc `docs/generated/agent_packet_preview.json`;
+5. nếu Field Profiler có tỷ lệ mơ hồ quá cao, sửa deterministic classifier hoặc chỉ review một tập field high-value bằng Gemini;
+6. chỉ khi packet field/theme đủ đa dạng và không có bề mặt công thức mới gọi Gemini tạo 6 hypothesis card;
+7. dry-run AlphaPlan trước;
+8. sau đó mới tiêu batch 12 simulation đầu tiên của v2.
